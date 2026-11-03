@@ -21,7 +21,7 @@ abstract class TestCase extends BaseTestCase
         if ($default !== 'pgsql' || $schema !== 'eduflow_test') {
             throw new RuntimeException(
                 "Test dihentikan: koneksi default '{$default}' dan search_path '{$schema}'. "
-                . "Test hanya boleh berjalan di pgsql dengan schema 'eduflow_test'."
+                ."Test hanya boleh berjalan di pgsql dengan schema 'eduflow_test'."
             );
         }
     }
