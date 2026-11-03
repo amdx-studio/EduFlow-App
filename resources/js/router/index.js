@@ -1,7 +1,51 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '../pages/HomePage.vue';
+import { useAuthStore } from '../stores/auth';
+import AppLayout from '../components/AppLayout.vue';
+import LoginPage from '../pages/LoginPage.vue';
+import RegisterPage from '../pages/RegisterPage.vue';
+import CoursesPage from '../pages/CoursesPage.vue';
+import ForbiddenPage from '../pages/ForbiddenPage.vue';
+import NotFoundPage from '../pages/NotFoundPage.vue';
 
-export default createRouter({
+const router = createRouter({
     history: createWebHistory(),
-    routes: [{ path: '/', component: HomePage }],
+    routes: [
+        { path: '/', redirect: '/courses' },
+        { path: '/login', name: 'login', component: LoginPage, meta: { guest: true } },
+        { path: '/register', name: 'register', component: RegisterPage, meta: { guest: true } },
+        {
+            path: '/',
+            component: AppLayout,
+            meta: { requiresAuth: true },
+            children: [
+                { path: 'courses', name: 'courses', component: CoursesPage },
+                { path: 'forbidden', name: 'forbidden', component: ForbiddenPage },
+                // Contoh rute berperan (dipakai di fase berikutnya):
+                // { path: 'teacher/...', meta: { roles: ['teacher'] }, ... }
+                { path: ':pathMatch(.*)*', name: 'not-found', component: NotFoundPage },
+            ],
+        },
+    ],
 });
+
+router.beforeEach(async (to) => {
+    const auth = useAuthStore();
+    await auth.init();
+
+    if (to.meta.requiresAuth && !auth.isAuthenticated) {
+        return { name: 'login', query: { redirect: to.fullPath } };
+    }
+
+    if (to.meta.guest && auth.isAuthenticated) {
+        return { name: 'courses' };
+    }
+
+    const roles = to.meta.roles;
+    if (roles && !roles.includes(auth.user?.role)) {
+        return { name: 'forbidden' };
+    }
+
+    return true;
+});
+
+export default router;
