@@ -6,6 +6,9 @@ import RegisterPage from '../pages/RegisterPage.vue';
 import CoursesPage from '../pages/CoursesPage.vue';
 import ForbiddenPage from '../pages/ForbiddenPage.vue';
 import NotFoundPage from '../pages/NotFoundPage.vue';
+import CourseLayout from '../components/CourseLayout.vue';
+import CourseLessonsPage from '../pages/CourseLessonsPage.vue';
+import CourseStudentsPage from '../pages/CourseStudentsPage.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -19,6 +22,18 @@ const router = createRouter({
             meta: { requiresAuth: true },
             children: [
                 { path: 'courses', name: 'courses', component: CoursesPage },
+                {
+                    path: 'courses/:courseId',
+                    component: CourseLayout,
+                    children: [
+                        {
+                            path: '',
+                            redirect: (to) => ({ name: 'course-lessons', params: { courseId: to.params.courseId } }),
+                        },
+                        { path: 'lessons', name: 'course-lessons', component: CourseLessonsPage },
+                        { path: 'students', name: 'course-students', component: CourseStudentsPage, meta: { roles: ['teacher'] } },
+                    ],
+                },
                 { path: 'forbidden', name: 'forbidden', component: ForbiddenPage },
                 // Contoh rute berperan (dipakai di fase berikutnya):
                 // { path: 'teacher/...', meta: { roles: ['teacher'] }, ... }
