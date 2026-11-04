@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -24,5 +25,10 @@ class LearningConcept extends Model
     public function questions(): HasMany
     {
         return $this->hasMany(Question::class, 'concept_id');
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $query->whereHas('course', fn (Builder $q) => $q->visibleTo($user));
     }
 }
