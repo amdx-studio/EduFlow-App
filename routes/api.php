@@ -94,7 +94,7 @@ Route::bind('question', function ($value) {
     $user = request()->user();
     abort_unless($user, 401);
 
-    return Question::whereHas('quiz.course', fn ($q) => $q->visibleTo($user))->findOrFail($value);
+    return Question::whereHas('quiz', fn ($q) => $q->visibleTo($user))->findOrFail($value);
 });
 
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
