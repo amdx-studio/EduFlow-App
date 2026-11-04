@@ -66,3 +66,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('lessons/{lesson}', [LessonController::class, 'update'])->middleware('role:teacher');
     Route::delete('lessons/{lesson}', [LessonController::class, 'destroy'])->middleware('role:teacher');
 });
+
+Route::post('lessons/{lesson}/complete', [LessonController::class, 'complete'])
+    ->middleware(['auth:sanctum', 'role:student']);

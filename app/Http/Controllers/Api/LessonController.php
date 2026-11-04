@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateLessonRequest;
 use App\Http\Resources\LessonResource;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\LessonProgress;
 use App\Models\RemediationAssignment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,5 +103,21 @@ class LessonController extends Controller
         $lesson->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function complete(Request $request, Lesson $lesson): JsonResponse
+    {
+        $progress = LessonProgress::firstOrCreate(
+            ['lesson_id' => $lesson->id, 'student_id' => $request->user()->id],
+            ['completed_at' => now()]
+        );
+
+        return response()->json([
+            'data' => [
+                'completed_at' => $progress->completed_at->toIso8601ZuluString(),
+                // Efek ke remediation_assignments ditambah di Phase 8 (KT-11, §8.4).
+                'assignments_completed' => 0,
+            ],
+        ]);
     }
 }
