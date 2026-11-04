@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -42,5 +43,19 @@ class QuizAttempt extends Model
     public function remediationAssignments(): HasMany
     {
         return $this->hasMany(RemediationAssignment::class, 'attempt_id');
+    }
+
+    /**
+     * Siswa: percobaan miliknya. Guru: hanya percobaan TERKIRIM di kelas miliknya.
+     * Selain itu tidak terlihat (404).
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->role === 'teacher') {
+            return $query->where('status', 'submitted')
+                ->whereHas('quiz.course', fn (Builder $q) => $q->where('teacher_id', $user->id));
+        }
+
+        return $query->where('student_id', $user->id);
     }
 }

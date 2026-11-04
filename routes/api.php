@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AttemptController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
@@ -12,6 +13,7 @@ use App\Models\LearningConcept;
 use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use Illuminate\Support\Facades\Route;
 
 // Autentikasi (API-02..05). API-01 (csrf-cookie) disediakan Sanctum.
@@ -105,3 +107,19 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
 
 Route::post('quizzes/{quiz}/publish', [QuizController::class, 'publish'])
     ->middleware(['auth:sanctum', 'role:teacher']);
+
+// --- Phase 7: Attempts, Scoring, Mastery (API-32..36) ---
+Route::bind('attempt', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return QuizAttempt::visibleTo($user)->findOrFail($value);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('quizzes/{quiz}/attempts', [AttemptController::class, 'store'])->middleware('role:student');
+    Route::get('attempts/{attempt}', [AttemptController::class, 'show']);
+    Route::put('attempts/{attempt}/answers', [AttemptController::class, 'answer'])->middleware('role:student');
+    Route::post('attempts/{attempt}/submit', [AttemptController::class, 'submit'])->middleware('role:student');
+    Route::get('attempts/{attempt}/result', [AttemptController::class, 'result']);
+});
