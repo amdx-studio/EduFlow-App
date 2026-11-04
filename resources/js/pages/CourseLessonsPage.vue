@@ -52,6 +52,12 @@ watch(() => route.params.courseId, load);
 
 <template>
     <section>
+        <div v-if="auth.isTeacher" class="mb-4">
+            <RouterLink :to="`/courses/${route.params.courseId}/lessons/new`"
+                class="inline-flex min-h-10 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                Tambah materi
+            </RouterLink>
+        </div>
         <p v-if="loading" class="text-slate-600">Memuat materi...</p>
 
         <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
@@ -91,6 +97,10 @@ watch(() => route.params.courseId, load);
                             </span>
                         </div>
                     </div>
+                    <RouterLink v-if="auth.isTeacher" :to="`/courses/${route.params.courseId}/lessons/${lesson.id}/edit`"
+                        class="ml-auto inline-flex min-h-10 items-center rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100">
+                        Ubah
+                    </RouterLink>
                     <button v-if="auth.isTeacher" type="button"
                         class="min-h-10 rounded-md border border-red-300 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
                         @click="deleting = lesson">
