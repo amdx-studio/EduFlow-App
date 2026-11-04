@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Models\Course;
+use App\Models\LearningConcept;
 use Illuminate\Support\Facades\Route;
 
 // Autentikasi (API-02..05). API-01 (csrf-cookie) disediakan Sanctum.
@@ -31,4 +33,19 @@ Route::middleware('auth:sanctum')->prefix('courses')->group(function () {
     Route::put('{course}', [CourseController::class, 'update'])->middleware('role:teacher');
     Route::post('{course}/archive', [CourseController::class, 'archive'])->middleware('role:teacher');
     Route::get('{course}/students', [EnrollmentController::class, 'students'])->middleware('role:teacher');
+});
+
+// --- Phase 5: Concepts & Lessons ---
+Route::bind('concept', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return LearningConcept::visibleTo($user)->findOrFail($value);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('courses/{course}/concepts', [ConceptController::class, 'index']);
+    Route::post('courses/{course}/concepts', [ConceptController::class, 'store'])->middleware('role:teacher');
+    Route::put('concepts/{concept}', [ConceptController::class, 'update'])->middleware('role:teacher');
+    Route::delete('concepts/{concept}', [ConceptController::class, 'destroy'])->middleware('role:teacher');
 });
