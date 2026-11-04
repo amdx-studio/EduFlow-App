@@ -77,7 +77,10 @@ watch(() => route.params.courseId, load);
             <li v-for="quiz in quizzes" :key="quiz.id" class="rounded-lg border border-slate-200 bg-white p-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
-                        <p class="font-semibold">{{ quiz.title }}</p>
+                        <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
+                            class="font-semibold text-indigo-700 hover:underline">
+                            {{ quiz.title }}
+                        </RouterLink>
                         <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
                             <span class="rounded px-2 py-0.5 font-medium"
                                 :class="quiz.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'">

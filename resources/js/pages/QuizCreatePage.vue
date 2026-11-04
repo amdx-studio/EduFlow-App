@@ -19,14 +19,14 @@ async function save() {
     saving.value = true;
     errors.value = {};
     try {
-        await http.post(`/api/courses/${courseId}/quizzes`, {
+        const { data } = await http.post(`/api/courses/${courseId}/quizzes`, {
             title: form.value.title,
             // Asesmen ulang ditambahkan di Phase 8; saat ini hanya asesmen.
             kind: 'assessment',
             max_attempts: Number(form.value.max_attempts) || 1,
         });
         toast.success('Kuis dibuat sebagai draf.');
-        router.push(`/courses/${courseId}/quizzes`);
+        router.push(`/courses/${courseId}/quizzes/${data.data.id}`);
     } catch (e) {
         if (e.response?.status === 422) {
             errors.value = fieldErrors(e);
