@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateQuizRequest;
 use App\Http\Resources\QuizResource;
 use App\Models\Course;
 use App\Models\Quiz;
+use App\Services\QuizPublishService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -91,5 +92,20 @@ class QuizController extends Controller
         $quiz->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function publish(Quiz $quiz, QuizPublishService $service)
+    {
+        Gate::authorize('update', $quiz);
+
+        if ($quiz->status === 'published') {
+            return response()->json(['message' => 'Kuis sudah terbit.'], 409);
+        }
+
+        $warnings = $service->publish($quiz);
+
+        $quiz->refresh()->loadCount(['questions', 'attempts']);
+
+        return (new QuizResource($quiz))->additional(['warnings' => $warnings]);
     }
 }

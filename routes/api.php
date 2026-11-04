@@ -102,3 +102,6 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     Route::put('questions/{question}', [QuestionController::class, 'update']);
     Route::delete('questions/{question}', [QuestionController::class, 'destroy']);
 });
+
+Route::post('quizzes/{quiz}/publish', [QuizController::class, 'publish'])
+    ->middleware(['auth:sanctum', 'role:teacher']);
