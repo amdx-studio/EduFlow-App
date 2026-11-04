@@ -9,6 +9,7 @@ import NotFoundPage from '../pages/NotFoundPage.vue';
 import CourseLayout from '../components/CourseLayout.vue';
 import CourseLessonsPage from '../pages/CourseLessonsPage.vue';
 import CourseConceptsPage from '../pages/CourseConceptsPage.vue';
+import LessonReadPage from '../pages/LessonReadPage.vue';
 import CourseStudentsPage from '../pages/CourseStudentsPage.vue';
 
 const router = createRouter({
@@ -32,6 +33,7 @@ const router = createRouter({
                             redirect: (to) => ({ name: 'course-lessons', params: { courseId: to.params.courseId } }),
                         },
                         { path: 'lessons', name: 'course-lessons', component: CourseLessonsPage },
+                        { path: 'lessons/:lessonId', name: 'lesson-read', component: LessonReadPage },
                         { path: 'concepts', name: 'course-concepts', component: CourseConceptsPage, meta: { roles: ['teacher'] } },
                         { path: 'students', name: 'course-students', component: CourseStudentsPage, meta: { roles: ['teacher'] } },
                     ],
