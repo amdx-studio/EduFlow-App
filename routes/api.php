@@ -5,9 +5,13 @@ use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\QuestionController;
+use App\Http\Controllers\Api\QuizController;
 use App\Models\Course;
 use App\Models\LearningConcept;
 use App\Models\Lesson;
+use App\Models\Question;
+use App\Models\Quiz;
 use Illuminate\Support\Facades\Route;
 
 // Autentikasi (API-02..05). API-01 (csrf-cookie) disediakan Sanctum.
@@ -69,3 +73,35 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('lessons/{lesson}/complete', [LessonController::class, 'complete'])
     ->middleware(['auth:sanctum', 'role:student']);
+
+// --- Phase 6: Quiz Authoring ---
+Route::bind('quiz', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return Quiz::visibleTo($user)->findOrFail($value);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('courses/{course}/quizzes', [QuizController::class, 'index']);
+    Route::post('courses/{course}/quizzes', [QuizController::class, 'store'])->middleware('role:teacher');
+    Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
+    Route::put('quizzes/{quiz}', [QuizController::class, 'update'])->middleware('role:teacher');
+    Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy'])->middleware('role:teacher');
+});
+
+Route::bind('question', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return Question::whereHas('quiz', fn ($q) => $q->visibleTo($user))->findOrFail($value);
+});
+
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
+    Route::post('quizzes/{quiz}/questions', [QuestionController::class, 'store']);
+    Route::put('questions/{question}', [QuestionController::class, 'update']);
+    Route::delete('questions/{question}', [QuestionController::class, 'destroy']);
+});
+
+Route::post('quizzes/{quiz}/publish', [QuizController::class, 'publish'])
+    ->middleware(['auth:sanctum', 'role:teacher']);

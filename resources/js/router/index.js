@@ -11,6 +11,9 @@ import CourseLessonsPage from '../pages/CourseLessonsPage.vue';
 import CourseConceptsPage from '../pages/CourseConceptsPage.vue';
 import LessonReadPage from '../pages/LessonReadPage.vue';
 import LessonEditorPage from '../pages/LessonEditorPage.vue';
+import CourseQuizzesPage from '../pages/CourseQuizzesPage.vue';
+import QuizCreatePage from '../pages/QuizCreatePage.vue';
+import QuizBuilderPage from '../pages/QuizBuilderPage.vue';
 import CourseStudentsPage from '../pages/CourseStudentsPage.vue';
 
 const router = createRouter({
@@ -38,6 +41,9 @@ const router = createRouter({
                         { path: 'lessons/:lessonId/edit', name: 'lesson-edit', component: LessonEditorPage, meta: { roles: ['teacher'] } },
                         { path: 'lessons/:lessonId', name: 'lesson-read', component: LessonReadPage },
                         { path: 'concepts', name: 'course-concepts', component: CourseConceptsPage, meta: { roles: ['teacher'] } },
+                        { path: 'quizzes', name: 'course-quizzes', component: CourseQuizzesPage, meta: { roles: ['teacher'] } },
+                        { path: 'quizzes/new', name: 'quiz-new', component: QuizCreatePage, meta: { roles: ['teacher'] } },
+                        { path: 'quizzes/:quizId', name: 'quiz-builder', component: QuizBuilderPage, meta: { roles: ['teacher'] } },
                         { path: 'students', name: 'course-students', component: CourseStudentsPage, meta: { roles: ['teacher'] } },
                     ],
                 },
