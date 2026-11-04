@@ -5,10 +5,12 @@ use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Models\Course;
 use App\Models\LearningConcept;
 use App\Models\Lesson;
+use App\Models\Question;
 use App\Models\Quiz;
 use Illuminate\Support\Facades\Route;
 
@@ -86,4 +88,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('quizzes/{quiz}', [QuizController::class, 'update'])->middleware('role:teacher');
     Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy'])->middleware('role:teacher');
+});
+
+Route::bind('question', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return Question::whereHas('quiz.course', fn ($q) => $q->visibleTo($user))->findOrFail($value);
+});
+
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
+    Route::post('quizzes/{quiz}/questions', [QuestionController::class, 'store']);
+    Route::put('questions/{question}', [QuestionController::class, 'update']);
+    Route::delete('questions/{question}', [QuestionController::class, 'destroy']);
 });
