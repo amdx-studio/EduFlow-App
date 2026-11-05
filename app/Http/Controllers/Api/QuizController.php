@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateQuizRequest;
 use App\Http\Resources\QuizResource;
 use App\Models\Course;
 use App\Models\Quiz;
+use App\Services\GateService;
 use App\Services\QuizPublishService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Gate;
 
 class QuizController extends Controller
 {
-    public function index(Request $request, Course $course)
+    public function index(Request $request, Course $course, GateService $gate)
     {
         $user = $request->user();
 
@@ -23,13 +24,20 @@ class QuizController extends Controller
 
         if ($user->role === 'teacher') {
             Gate::authorize('update', $course);
-            $query->withCount(['questions', 'attempts']);
-        } else {
-            // Gate dan jumlah percobaan siswa ditambahkan di Phase 7.
-            $query->where('status', 'published');
+
+            return QuizResource::collection($query->withCount(['questions', 'attempts'])->get());
         }
 
-        return QuizResource::collection($query->get());
+        $quizzes = $query
+            ->where('status', 'published')
+            ->withCount(['attempts as attempts_used' => fn ($q) => $q->where('student_id', $user->id)])
+            ->get()
+            ->each(function (Quiz $quiz) use ($gate, $user, $course) {
+                $quiz->setRelation('course', $course);
+                $quiz->setAttribute('gate', $gate->check($user, $quiz));
+            });
+
+        return QuizResource::collection($quizzes);
     }
 
     public function store(StoreQuizRequest $request, Course $course): JsonResponse
@@ -42,18 +50,26 @@ class QuizController extends Controller
         return (new QuizResource($quiz))->response()->setStatusCode(201);
     }
 
-    public function show(Request $request, Quiz $quiz): QuizResource
+    public function show(Request $request, Quiz $quiz, GateService $gate): QuizResource
     {
-        if ($request->user()->role === 'teacher') {
+        $user = $request->user();
+
+        if ($user->role === 'teacher') {
             $quiz->loadCount(['questions', 'attempts']);
             $quiz->load([
                 'questions' => fn ($q) => $q->orderBy('position')->orderBy('id'),
                 'questions.concept:id,name',
                 'questions.options' => fn ($q) => $q->orderBy('position')->orderBy('id'),
             ]);
+
+            return new QuizResource($quiz);
         }
 
-        // Siswa: hanya metadata, tanpa soal (gate dan ringkasan percobaan di Phase 7).
+        // Siswa: metadata, gate, dan riwayat percobaan sendiri. Tanpa soal.
+        $quiz->loadCount(['attempts as attempts_used' => fn ($q) => $q->where('student_id', $user->id)]);
+        $quiz->load(['attempts' => fn ($q) => $q->where('student_id', $user->id)->orderBy('attempt_no')]);
+        $quiz->setAttribute('gate', $gate->check($user, $quiz));
+
         return new QuizResource($quiz);
     }
 
