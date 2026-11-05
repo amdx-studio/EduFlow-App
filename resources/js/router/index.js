@@ -15,6 +15,7 @@ import QuizzesIndexPage from '../pages/QuizzesIndexPage.vue';
 import QuizCreatePage from '../pages/QuizCreatePage.vue';
 import QuizPage from '../pages/QuizPage.vue';
 import AttemptPage from '../pages/AttemptPage.vue';
+import AttemptResultPage from '../pages/AttemptResultPage.vue';
 import CourseStudentsPage from '../pages/CourseStudentsPage.vue';
 
 const router = createRouter({
@@ -48,6 +49,7 @@ const router = createRouter({
                         { path: 'students', name: 'course-students', component: CourseStudentsPage, meta: { roles: ['teacher'] } },
                     ],
                 },
+                { path: 'attempts/:attemptId/result', name: 'attempt-result', component: AttemptResultPage },
                 { path: 'attempts/:attemptId', name: 'attempt', component: AttemptPage, meta: { roles: ['student'] } },
                 { path: 'forbidden', name: 'forbidden', component: ForbiddenPage },
                 // Contoh rute berperan (dipakai di fase berikutnya):

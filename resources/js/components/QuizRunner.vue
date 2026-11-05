@@ -38,8 +38,8 @@ const saveLabel = computed(() => ({
     error: 'Gagal menyimpan',
 }[saveState.value]));
 
-function goToQuiz(replace) {
-    const target = `/courses/${quiz.value.course_id}/quizzes/${quiz.value.id}`;
+function goToResult(replace) {
+    const target = `/attempts/${props.attemptId}/result`;
     return replace ? router.replace(target) : router.push(target);
 }
 
@@ -56,7 +56,7 @@ async function load() {
 
         // Percobaan yang sudah terkirim mengembalikan payload hasil (tanpa status berjalan).
         if (payload.attempt.status !== 'in_progress') {
-            await goToQuiz(true);
+            await goToResult(true);
             return;
         }
 
@@ -91,7 +91,7 @@ async function save(questionId, optionId) {
         saveState.value = 'error';
         toast.error(errorMessage(e));
         if (e.response?.status === 409) {
-            await goToQuiz(true);
+            await goToResult(true);
         }
     } finally {
         saving.value = false;
@@ -111,11 +111,11 @@ async function submit() {
     try {
         await http.post(`/api/attempts/${props.attemptId}/submit`);
         toast.success('Kuis dikirim.');
-        await goToQuiz(false);
+        await goToResult(false);
     } catch (e) {
         toast.error(errorMessage(e));
         if (e.response?.status === 409) {
-            await goToQuiz(true);
+            await goToResult(true);
         }
     } finally {
         submitting.value = false;

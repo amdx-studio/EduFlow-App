@@ -124,7 +124,8 @@ onMounted(load);
                                 <th class="py-2 pr-4 font-medium">Percobaan</th>
                                 <th class="py-2 pr-4 font-medium">Status</th>
                                 <th class="py-2 pr-4 font-medium">Skor</th>
-                                <th class="py-2 font-medium">Waktu kirim</th>
+                                <th class="py-2 pr-4 font-medium">Waktu kirim</th>
+                                <th class="py-2 font-medium">Hasil</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -132,7 +133,11 @@ onMounted(load);
                                 <td class="py-2 pr-4">Ke-{{ attempt.attempt_no }}</td>
                                 <td class="py-2 pr-4">{{ attempt.status === 'submitted' ? 'Terkirim' : 'Sedang dikerjakan' }}</td>
                                 <td class="py-2 pr-4">{{ formatScore(attempt.score_percent) }}</td>
-                                <td class="py-2">{{ formatTime(attempt.submitted_at) }}</td>
+                                <td class="py-2 pr-4">{{ formatTime(attempt.submitted_at) }}</td>
+                                <td class="py-2">
+                                    <RouterLink v-if="attempt.status === 'submitted'" :to="`/attempts/${attempt.id}/result`"
+                                        class="text-indigo-700 underline">Lihat hasil</RouterLink>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
