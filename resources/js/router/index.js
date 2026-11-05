@@ -11,9 +11,10 @@ import CourseLessonsPage from '../pages/CourseLessonsPage.vue';
 import CourseConceptsPage from '../pages/CourseConceptsPage.vue';
 import LessonReadPage from '../pages/LessonReadPage.vue';
 import LessonEditorPage from '../pages/LessonEditorPage.vue';
-import CourseQuizzesPage from '../pages/CourseQuizzesPage.vue';
+import QuizzesIndexPage from '../pages/QuizzesIndexPage.vue';
 import QuizCreatePage from '../pages/QuizCreatePage.vue';
-import QuizBuilderPage from '../pages/QuizBuilderPage.vue';
+import QuizPage from '../pages/QuizPage.vue';
+import AttemptPage from '../pages/AttemptPage.vue';
 import CourseStudentsPage from '../pages/CourseStudentsPage.vue';
 
 const router = createRouter({
@@ -41,12 +42,13 @@ const router = createRouter({
                         { path: 'lessons/:lessonId/edit', name: 'lesson-edit', component: LessonEditorPage, meta: { roles: ['teacher'] } },
                         { path: 'lessons/:lessonId', name: 'lesson-read', component: LessonReadPage },
                         { path: 'concepts', name: 'course-concepts', component: CourseConceptsPage, meta: { roles: ['teacher'] } },
-                        { path: 'quizzes', name: 'course-quizzes', component: CourseQuizzesPage, meta: { roles: ['teacher'] } },
+                        { path: 'quizzes', name: 'course-quizzes', component: QuizzesIndexPage },
                         { path: 'quizzes/new', name: 'quiz-new', component: QuizCreatePage, meta: { roles: ['teacher'] } },
-                        { path: 'quizzes/:quizId', name: 'quiz-builder', component: QuizBuilderPage, meta: { roles: ['teacher'] } },
+                        { path: 'quizzes/:quizId', name: 'quiz-builder', component: QuizPage },
                         { path: 'students', name: 'course-students', component: CourseStudentsPage, meta: { roles: ['teacher'] } },
                     ],
                 },
+                { path: 'attempts/:attemptId', name: 'attempt', component: AttemptPage, meta: { roles: ['student'] } },
                 { path: 'forbidden', name: 'forbidden', component: ForbiddenPage },
                 // Contoh rute berperan (dipakai di fase berikutnya):
                 // { path: 'teacher/...', meta: { roles: ['teacher'] }, ... }
