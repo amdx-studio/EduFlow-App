@@ -421,4 +421,49 @@ class QuizTest extends TestCase
 
         $this->getJson("/api/courses/{$course->id}/quizzes")->assertUnauthorized();
     }
+
+    public function test_question_order_follows_position_for_teacher_and_student(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $course = $this->course($teacher);
+        $this->enroll($course, $student);
+        $concept = $this->concept($course);
+        $quiz = $this->quiz($course);
+        $first = $this->question($quiz, $concept, 1);
+        $second = $this->question($quiz, $concept, 2);
+        $third = $this->question($quiz, $concept, 3);
+
+        // Geser soal ketiga ke depan lewat API (nilai urutan 0).
+        $this->signIn($teacher);
+        $this->putJson("/api/questions/{$third->id}", $this->payload($concept, ['position' => 0]))
+            ->assertOk()
+            ->assertJsonPath('data.position', 0);
+
+        $this->getJson("/api/quizzes/{$quiz->id}")
+            ->assertOk()
+            ->assertJsonPath('data.questions.0.id', $third->id)
+            ->assertJsonPath('data.questions.1.id', $first->id)
+            ->assertJsonPath('data.questions.2.id', $second->id);
+
+        // Nilai urutan sama diurutkan menurut waktu dibuat (id).
+        $this->putJson("/api/questions/{$second->id}", $this->payload($concept, ['position' => 1]))->assertOk();
+
+        $this->getJson("/api/quizzes/{$quiz->id}")
+            ->assertJsonPath('data.questions.0.id', $third->id)
+            ->assertJsonPath('data.questions.1.id', $first->id)
+            ->assertJsonPath('data.questions.2.id', $second->id);
+
+        // Siswa menerima soal dengan urutan yang sama.
+        $quiz->refresh()->update(['status' => 'published', 'published_at' => now()]);
+
+        $this->signIn($student);
+        $attemptId = $this->postJson("/api/quizzes/{$quiz->id}/attempts")->assertCreated()->json('data.id');
+
+        $this->getJson("/api/attempts/{$attemptId}")
+            ->assertOk()
+            ->assertJsonPath('data.questions.0.id', $third->id)
+            ->assertJsonPath('data.questions.1.id', $first->id)
+            ->assertJsonPath('data.questions.2.id', $second->id);
+    }
 }

@@ -250,7 +250,7 @@ onMounted(() => load());
                 </div>
 
                 <ol class="mt-3 space-y-3">
-                    <li v-for="question in quiz.questions" :key="question.id">
+                    <li v-for="(question, index) in quiz.questions" :key="question.id">
                         <QuestionEditor v-if="editing === question.id" :concepts="concepts" :question="question"
                             :errors="editorErrors" :busy="savingQuestion"
                             @save="saveQuestion" @cancel="cancelEdit" />
@@ -258,7 +258,7 @@ onMounted(() => load());
                         <div v-else class="rounded-lg border border-slate-200 bg-white p-4">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="text-xs text-slate-500">Soal {{ question.position }}</p>
+                                    <p class="text-xs text-slate-500">Soal {{ index + 1 }} &middot; nilai urutan {{ question.position }}</p>
                                     <p class="mt-1 whitespace-pre-line font-medium">{{ question.body }}</p>
                                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
                                         <span class="rounded bg-indigo-50 px-2 py-0.5 text-indigo-800">{{ question.concept?.name }}</span>

@@ -20,6 +20,7 @@ function blank() {
         body: '',
         concept_id: '',
         points: 1,
+        position: '',
         explanation: '',
         options: [
             { body: '', is_correct: true },
@@ -33,6 +34,7 @@ function fromQuestion(q) {
         body: q.body,
         concept_id: q.concept_id,
         points: q.points,
+        position: q.position,
         explanation: q.explanation ?? '',
         options: (q.options ?? []).map((o) => ({ body: o.body, is_correct: o.is_correct })),
     };
@@ -79,6 +81,7 @@ function submit() {
         concept_id: Number(form.value.concept_id),
         points: Number(form.value.points) || 1,
         explanation: form.value.explanation || null,
+        ...(form.value.position !== '' && form.value.position !== null ? { position: Number(form.value.position) } : {}),
         options: form.value.options.map((o) => ({ body: o.body, is_correct: !!o.is_correct })),
     });
 }
@@ -114,6 +117,13 @@ function submit() {
                 <input id="qe-points" v-model.number="form.points" type="number" min="1" max="65535" required
                     class="mt-1 min-h-10 w-24 rounded-md border border-slate-300 bg-white px-3 py-2" />
                 <p v-if="errors.points" class="mt-1 text-sm text-red-700">{{ errors.points[0] }}</p>
+            </div>
+            <div>
+                <label for="qe-position" class="block text-sm font-medium">Urutan</label>
+                <input id="qe-position" v-model.number="form.position" type="number" min="0"
+                    class="mt-1 min-h-10 w-24 rounded-md border border-slate-300 bg-white px-3 py-2" />
+                <p class="mt-1 max-w-48 text-xs text-slate-600">Angka kecil tampil lebih dulu. Kosongkan untuk menaruh di akhir.</p>
+                <p v-if="errors.position" class="mt-1 text-sm text-red-700">{{ errors.position[0] }}</p>
             </div>
         </div>
 
