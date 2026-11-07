@@ -107,16 +107,28 @@ class LessonController extends Controller
 
     public function complete(Request $request, Lesson $lesson): JsonResponse
     {
-        $progress = LessonProgress::firstOrCreate(
-            ['lesson_id' => $lesson->id, 'student_id' => $request->user()->id],
-            ['completed_at' => now()]
-        );
+        $student = $request->user();
+
+        [$progress, $completed] = DB::transaction(function () use ($lesson, $student) {
+            $progress = LessonProgress::firstOrCreate(
+                ['lesson_id' => $lesson->id, 'student_id' => $student->id],
+                ['completed_at' => now()]
+            );
+
+            // KT-11: assignment 'assigned' milik siswa ini untuk materi ini menjadi 'completed'.
+            // Idempoten: panggilan berikutnya tidak menemukan baris 'assigned' (hasil 0).
+            $completed = RemediationAssignment::where('student_id', $student->id)
+                ->where('lesson_id', $lesson->id)
+                ->where('status', 'assigned')
+                ->update(['status' => 'completed', 'completed_at' => now()]);
+
+            return [$progress, $completed];
+        });
 
         return response()->json([
             'data' => [
                 'completed_at' => $progress->completed_at->toIso8601ZuluString(),
-                // Efek ke remediation_assignments ditambah di Phase 8 (KT-11, §8.4).
-                'assignments_completed' => 0,
+                'assignments_completed' => $completed,
             ],
         ]);
     }
