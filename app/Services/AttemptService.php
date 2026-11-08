@@ -20,6 +20,7 @@ class AttemptService
     public function __construct(
         private readonly GateService $gate,
         private readonly MasteryService $mastery,
+        private readonly RemediationService $remediation,
     ) {}
 
     /**
@@ -137,6 +138,7 @@ class AttemptService
             ]);
 
             $this->mastery->compute($locked->refresh());
+            $this->remediation->generate($locked);
 
             return $locked->refresh();
         });

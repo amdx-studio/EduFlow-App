@@ -90,6 +90,8 @@ class AttemptController extends Controller
             'quiz.questions.options',
             'answers',
             'conceptResults.concept',
+            'remediationAssignments.concept',
+            'remediationAssignments.lesson',
         ]);
 
         return new AttemptResultResource($attempt);

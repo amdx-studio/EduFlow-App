@@ -105,6 +105,12 @@ class QuizController extends Controller
             ], 409);
         }
 
+        if ($quiz->reassessments()->exists()) {
+            return response()->json([
+                'message' => 'Kuis tidak dapat dihapus karena dipakai sebagai kuis dasar asesmen ulang.',
+            ], 409);
+        }
+
         $quiz->delete();
 
         return response()->json(null, 204);

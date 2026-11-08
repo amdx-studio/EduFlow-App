@@ -7,7 +7,6 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Validasi dan publikasi kuis (§8.8, FR-010).
- * Aturan asesmen ulang (kuis dasar, konsep bersama) ditambahkan di Phase 8.
  */
 class QuizPublishService
 {
@@ -22,7 +21,7 @@ class QuizPublishService
      */
     public function publish(Quiz $quiz): array
     {
-        $quiz->load(['course', 'questions.concept', 'questions.options']);
+        $quiz->load(['course', 'baseQuiz.questions', 'questions.concept', 'questions.options']);
 
         $errors = $this->errors($quiz);
 
@@ -42,7 +41,7 @@ class QuizPublishService
      */
     private function errors(Quiz $quiz): array
     {
-        $errors = [];
+        $errors = $this->baseQuizErrors($quiz);
 
         if ($quiz->questions->isEmpty()) {
             $errors['quiz'][] = 'Kuis harus memiliki minimal 1 soal.';
@@ -73,6 +72,47 @@ class QuizPublishService
 
             if ($question->points < 1) {
                 $errors[$key][] = "{$label} harus bernilai minimal 1 poin.";
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Aturan asesmen ulang (§8.8): kuis dasar terbit, jenis asesmen, kelas sama, berbagi konsep.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function baseQuizErrors(Quiz $quiz): array
+    {
+        if ($quiz->kind !== 'reassessment') {
+            return [];
+        }
+
+        $base = $quiz->baseQuiz;
+
+        if ($base === null) {
+            return ['base_quiz_id' => ['Asesmen ulang harus tertaut ke kuis dasar.']];
+        }
+
+        $errors = [];
+
+        if ($base->status !== 'published') {
+            $errors['base_quiz_id'][] = 'Kuis dasar belum terbit.';
+        }
+
+        if ($base->kind !== 'assessment') {
+            $errors['base_quiz_id'][] = 'Kuis dasar harus berjenis asesmen.';
+        }
+
+        if ((int) $base->course_id !== (int) $quiz->course_id) {
+            $errors['base_quiz_id'][] = 'Kuis dasar berada di kelas lain.';
+        } elseif ($quiz->questions->isNotEmpty()) {
+            $shared = $quiz->questions->pluck('concept_id')
+                ->intersect($base->questions->pluck('concept_id'));
+
+            if ($shared->isEmpty()) {
+                $errors['base_quiz_id'][] = 'Asesmen ulang harus memuat minimal 1 konsep dari kuis dasar.';
             }
         }
 

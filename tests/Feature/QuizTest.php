@@ -149,6 +149,8 @@ class QuizTest extends TestCase
         $this->postJson($url, ['kind' => 'assessment'])
             ->assertUnprocessable()->assertJsonValidationErrors('title');
         $this->postJson($url, ['title' => 'X', 'kind' => 'reassessment'])
+            ->assertUnprocessable()->assertJsonValidationErrors('base_quiz_id');
+        $this->postJson($url, ['title' => 'X', 'kind' => 'bukan-jenis'])
             ->assertUnprocessable()->assertJsonValidationErrors('kind');
         $this->postJson($url, ['title' => 'X', 'kind' => 'assessment', 'base_quiz_id' => 1])
             ->assertUnprocessable()->assertJsonValidationErrors('base_quiz_id');

@@ -20,6 +20,10 @@ function kindLabel(kind) {
     return kind === 'reassessment' ? 'Asesmen ulang' : 'Asesmen';
 }
 
+function baseTitle(id) {
+    return quizzes.value.find((q) => q.id === id)?.title ?? `#${id}`;
+}
+
 async function load() {
     loading.value = true;
     error.value = '';
@@ -87,6 +91,7 @@ watch(() => route.params.courseId, load);
                                 {{ quiz.status === 'published' ? 'Terbit' : 'Draf' }}
                             </span>
                             <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{{ kindLabel(quiz.kind) }}</span>
+                            <span v-if="quiz.kind === 'reassessment'" class="text-slate-600">dasar: {{ baseTitle(quiz.base_quiz_id) }}</span>
                             <span class="text-slate-600">{{ quiz.questions_count }} soal</span>
                             <span class="text-slate-600">{{ quiz.attempts_count }} percobaan</span>
                             <span class="text-slate-600">maks. {{ quiz.max_attempts }}x</span>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\RemediationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -59,9 +60,23 @@ class AttemptResultResource extends JsonResource
                         ->map(fn ($o) => ['id' => $o->id, 'body' => $o->body]),
                 ];
             }),
-            // Diisi RemediationService di Phase 8.
-            'remediation' => [],
-            'remediation_gaps' => [],
+            'remediation' => $attempt->remediationAssignments
+                ->sortBy('id')
+                ->values()
+                ->map(fn ($a) => [
+                    'id' => $a->id,
+                    'concept_id' => $a->concept_id,
+                    'concept' => $a->concept->name,
+                    'lesson' => ['id' => $a->lesson->id, 'title' => $a->lesson->title],
+                    'reason' => $a->reason,
+                    'source' => $a->source,
+                    'status' => $a->status,
+                    'note' => $a->note,
+                ]),
+            // Konsep lemah tanpa satu pun assignment (US-013 kriteria 3).
+            'remediation_gaps' => app(RemediationService::class)->gaps($attempt)
+                ->map(fn ($r) => ['concept_id' => $r->concept_id, 'concept' => $r->concept->name])
+                ->values(),
         ];
     }
 }

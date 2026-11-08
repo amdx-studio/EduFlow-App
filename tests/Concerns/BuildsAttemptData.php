@@ -4,6 +4,7 @@ namespace Tests\Concerns;
 
 use App\Models\Course;
 use App\Models\LearningConcept;
+use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\Quiz;
@@ -60,6 +61,23 @@ trait BuildsAttemptData
             'status' => 'published',
             'published_at' => now(),
         ], $extra))->refresh();
+    }
+
+    /** Materi tertaut ke satu konsep. Default: remedial dan terbit. */
+    private function remedialLesson(Course $course, LearningConcept $concept, string $title, int $position = 0, bool $published = true, string $kind = 'remedial'): Lesson
+    {
+        $lesson = Lesson::create([
+            'course_id' => $course->id,
+            'title' => $title,
+            'content' => 'Isi materi.',
+            'kind' => $kind,
+            'position' => $position,
+            'is_published' => $published,
+        ]);
+
+        $lesson->concepts()->attach($concept->id);
+
+        return $lesson;
     }
 
     /** Soal dengan dua opsi: "Benar" (kunci) dan "Salah". */

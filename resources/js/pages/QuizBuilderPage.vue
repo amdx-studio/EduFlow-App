@@ -16,6 +16,7 @@ const quizId = route.params.quizId;
 
 const quiz = ref(null);
 const concepts = ref([]);
+const baseQuiz = ref(null);
 const loading = ref(true);
 const error = ref('');
 const notFound = ref(false);
@@ -56,6 +57,15 @@ async function load(silent = false) {
         quiz.value = quizRes.data.data;
         concepts.value = conceptsRes.data.data;
         settings.value = { title: quiz.value.title, max_attempts: quiz.value.max_attempts };
+        baseQuiz.value = null;
+        if (quiz.value.kind === 'reassessment' && quiz.value.base_quiz_id) {
+            try {
+                const baseRes = await http.get(`/api/quizzes/${quiz.value.base_quiz_id}`);
+                baseQuiz.value = baseRes.data.data;
+            } catch {
+                baseQuiz.value = null;
+            }
+        }
     } catch (e) {
         if (e.response?.status === 404) {
             notFound.value = true;
@@ -199,6 +209,11 @@ onMounted(() => load());
         <div v-else-if="quiz" class="mt-3 space-y-4">
             <div class="flex flex-wrap items-center gap-2">
                 <h2 class="text-lg font-bold">{{ quiz.title }}</h2>
+                <span v-if="quiz.kind === 'reassessment'"
+                    class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">Asesmen ulang</span>
+                <span v-if="quiz.kind === 'reassessment'" class="text-sm text-slate-600">
+                    Kuis dasar: {{ baseQuiz?.title ?? `#${quiz.base_quiz_id}` }}
+                </span>
                 <span class="rounded px-2 py-0.5 text-xs font-medium"
                     :class="isDraft ? 'bg-slate-200 text-slate-700' : 'bg-green-100 text-green-800'">
                     {{ isDraft ? 'Draf' : 'Terbit' }}

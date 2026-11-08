@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import AnswerReview from '../components/AnswerReview.vue';
 import ResultTable from '../components/ResultTable.vue';
+import RemediationCard from '../components/RemediationCard.vue';
 import { errorMessage } from '../lib/errors';
 
 const route = useRoute();
@@ -93,6 +94,24 @@ watch(() => route.params.attemptId, load);
                 </div>
             </div>
 
+            <div class="rounded-lg border border-slate-200 bg-white p-5">
+                <h2 class="font-semibold">Rekomendasi remedial</h2>
+                <p v-if="!result.remediation.length && !result.remediation_gaps.length"
+                    class="mt-3 text-sm text-slate-600">
+                    Tidak ada konsep yang perlu remedial pada percobaan ini.
+                </p>
+                <ul v-if="result.remediation.length" class="mt-3 space-y-3">
+                    <li v-for="item in result.remediation" :key="item.id">
+                        <RemediationCard :item="item" :course-id="quiz?.course_id ?? null" />
+                    </li>
+                </ul>
+                <div v-if="result.remediation_gaps.length"
+                    class="mt-3 space-y-1 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    <p v-for="gap in result.remediation_gaps" :key="gap.concept_id">
+                        {{ gap.concept }}: Belum ada materi remedial untuk konsep ini; hubungi guru.
+                    </p>
+                </div>
+            </div>
             <div>
                 <h2 class="font-semibold">Tinjauan jawaban</h2>
                 <div class="mt-3">

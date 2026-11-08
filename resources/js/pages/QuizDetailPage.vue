@@ -95,6 +95,10 @@ onMounted(load);
                 <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                     <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ kindLabel(quiz.kind) }}</span>
                     <span>Percobaan terpakai: {{ quiz.attempts_used }} dari {{ quiz.max_attempts }}</span>
+                    <RouterLink v-if="quiz.kind === 'reassessment'" :to="`/courses/${courseId}/quizzes/${quizId}/comparison`"
+                        class="text-indigo-700 underline">
+                        Lihat perbandingan
+                    </RouterLink>
                 </div>
 
                 <div v-if="quiz.gate.status === 'available'" class="mt-4">
@@ -111,6 +115,15 @@ onMounted(load);
                 <div v-else class="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
                     <p class="font-semibold">Kuis terkunci</p>
                     <p>{{ quiz.gate.reason }}</p>
+                    <ul v-if="quiz.gate.pending?.length" class="mt-2 list-disc space-y-1 pl-5">
+                        <li v-for="item in quiz.gate.pending" :key="item.id">
+                            {{ item.concept }}: {{ item.lesson.title }}
+                        </li>
+                    </ul>
+                    <RouterLink v-if="quiz.gate.pending?.length" :to="`/courses/${courseId}/remediation`"
+                        class="mt-2 inline-block text-indigo-700 underline">
+                        Buka Remedial Saya
+                    </RouterLink>
                 </div>
             </div>
 
