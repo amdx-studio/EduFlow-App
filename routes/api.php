@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AttemptController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ComparisonController;
 use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EnrollmentController;
@@ -128,3 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // --- Phase 8: Remediation (API-37) ---
 Route::get('courses/{course}/remediation', [RemediationController::class, 'index'])
     ->middleware(['auth:sanctum', 'role:student']);
+
+// --- Phase 8: Comparison (API-39) ---
+Route::get('quizzes/{quiz}/comparison', [ComparisonController::class, 'show'])
+    ->middleware('auth:sanctum');
