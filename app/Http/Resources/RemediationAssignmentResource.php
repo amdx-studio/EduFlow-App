@@ -11,7 +11,9 @@ class RemediationAssignmentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'concept_id' => $this->concept_id,
             'concept' => $this->concept->name,
+            'mastery_percent' => $this->resource->getAttribute('mastery_percent'),
             'lesson' => [
                 'id' => $this->lesson->id,
                 'title' => $this->lesson->title,
