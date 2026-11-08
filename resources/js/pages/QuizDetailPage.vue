@@ -95,6 +95,10 @@ onMounted(load);
                 <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                     <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ kindLabel(quiz.kind) }}</span>
                     <span>Percobaan terpakai: {{ quiz.attempts_used }} dari {{ quiz.max_attempts }}</span>
+                    <RouterLink v-if="quiz.kind === 'reassessment'" :to="`/courses/${courseId}/quizzes/${quizId}/comparison`"
+                        class="text-indigo-700 underline">
+                        Lihat perbandingan
+                    </RouterLink>
                 </div>
 
                 <div v-if="quiz.gate.status === 'available'" class="mt-4">

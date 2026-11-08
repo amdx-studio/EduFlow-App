@@ -18,6 +18,7 @@ import AttemptPage from '../pages/AttemptPage.vue';
 import AttemptResultPage from '../pages/AttemptResultPage.vue';
 import CourseStudentsPage from '../pages/CourseStudentsPage.vue';
 import RemediationPage from '../pages/RemediationPage.vue';
+import ComparisonPage from '../pages/ComparisonPage.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -47,6 +48,7 @@ const router = createRouter({
                         { path: 'quizzes', name: 'course-quizzes', component: QuizzesIndexPage },
                         { path: 'quizzes/new', name: 'quiz-new', component: QuizCreatePage, meta: { roles: ['teacher'] } },
                         { path: 'quizzes/:quizId', name: 'quiz-builder', component: QuizPage },
+                        { path: 'quizzes/:quizId/comparison', name: 'quiz-comparison', component: ComparisonPage },
                         { path: 'students', name: 'course-students', component: CourseStudentsPage, meta: { roles: ['teacher'] } },
                         { path: 'remediation', name: 'course-remediation', component: RemediationPage, meta: { roles: ['student'] } },
                     ],
