@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import RemediationCard from '../components/RemediationCard.vue';
 import { errorMessage } from '../lib/errors';
@@ -13,6 +13,7 @@ const items = ref([]);
 const loading = ref(true);
 const error = ref('');
 const busyLesson = ref(null);
+const reassessments = ref([]);
 
 // Dikelompokkan per konsep; urutan mengikuti API-37 (konsep, lalu id).
 const groups = computed(() => {
@@ -29,6 +30,16 @@ const groups = computed(() => {
 
 const pendingCount = computed(() => items.value.filter((i) => i.status === 'assigned').length);
 
+// Daftar asesmen ulang dari API-23. Gagal tidak boleh merusak halaman remedial.
+async function loadReassessments() {
+    try {
+        const { data } = await http.get(`/api/courses/${route.params.courseId}/quizzes`);
+        reassessments.value = data.data.filter((q) => q.kind === 'reassessment');
+    } catch {
+        reassessments.value = [];
+    }
+}
+
 async function load(showLoading = true) {
     if (showLoading) {
         loading.value = true;
@@ -37,6 +48,7 @@ async function load(showLoading = true) {
     try {
         const { data } = await http.get(`/api/courses/${route.params.courseId}/remediation`);
         items.value = data.data;
+        await loadReassessments();
     } catch (e) {
         error.value = errorMessage(e);
     } finally {
@@ -99,6 +111,28 @@ watch(() => route.params.courseId, () => load());
                     </li>
                 </ul>
             </div>
+        </div>
+        <div v-if="!loading && !error && reassessments.length"
+            class="mt-5 rounded-lg border border-slate-200 bg-white p-5">
+            <h2 class="font-semibold">Asesmen ulang</h2>
+            <ul class="mt-3 space-y-3">
+                <li v-for="quiz in reassessments" :key="quiz.id" class="rounded-md border border-slate-200 p-4">
+                    <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
+                        class="font-medium text-indigo-700 hover:underline">
+                        {{ quiz.title }}
+                    </RouterLink>
+                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span class="rounded px-2 py-0.5 font-medium"
+                            :class="quiz.gate?.status === 'available' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-900'">
+                            {{ quiz.gate?.status === 'available' ? 'Tersedia' : 'Terkunci' }}
+                        </span>
+                        <span v-if="quiz.gate?.status === 'locked'" class="text-slate-600">{{ quiz.gate.reason }}</span>
+                        <span v-if="quiz.gate?.pending?.length" class="text-slate-600">
+                            {{ quiz.gate.pending.length }} remedial belum selesai
+                        </span>
+                    </div>
+                </li>
+            </ul>
         </div>
     </section>
 </template>

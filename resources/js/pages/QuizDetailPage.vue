@@ -111,6 +111,15 @@ onMounted(load);
                 <div v-else class="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
                     <p class="font-semibold">Kuis terkunci</p>
                     <p>{{ quiz.gate.reason }}</p>
+                    <ul v-if="quiz.gate.pending?.length" class="mt-2 list-disc space-y-1 pl-5">
+                        <li v-for="item in quiz.gate.pending" :key="item.id">
+                            {{ item.concept }}: {{ item.lesson.title }}
+                        </li>
+                    </ul>
+                    <RouterLink v-if="quiz.gate.pending?.length" :to="`/courses/${courseId}/remediation`"
+                        class="mt-2 inline-block text-indigo-700 underline">
+                        Buka Remedial Saya
+                    </RouterLink>
                 </div>
             </div>
 

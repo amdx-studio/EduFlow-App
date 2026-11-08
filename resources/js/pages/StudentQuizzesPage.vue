@@ -59,6 +59,10 @@ watch(() => route.params.courseId, load);
                         {{ quiz.gate.status === 'available' ? 'Tersedia' : 'Terkunci' }}
                     </span>
                     <span v-if="quiz.gate.status === 'locked'" class="text-slate-600">{{ quiz.gate.reason }}</span>
+                    <RouterLink v-if="quiz.gate.pending?.length" :to="`/courses/${route.params.courseId}/remediation`"
+                        class="text-indigo-700 underline">
+                        {{ quiz.gate.pending.length }} remedial belum selesai
+                    </RouterLink>
                 </div>
             </li>
         </ul>
