@@ -1,12 +1,13 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import LevelBadge from '../components/LevelBadge.vue';
 import MasteryBar from '../components/MasteryBar.vue';
 import RemediationCard from '../components/RemediationCard.vue';
-import { errorMessage } from '../lib/errors';
+import { errorMessage, fieldErrors } from '../lib/errors';
 import { formatDateTime } from '../lib/format';
+import { useToastStore } from '../stores/toast';
 
 const route = useRoute();
 
@@ -38,7 +39,54 @@ function score(value) {
     return `${Number(value).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
 }
 
-onMounted(load);
+const toast = useToastStore();
+const lessons = ref([]);
+const form = ref({ attemptId: '', conceptId: '', lessonId: '', note: '' });
+const formErrors = ref({});
+const saving = ref(false);
+
+// API-41 hanya memuat konsep untuk percobaan terakhir per kuis, jadi formulir dibatasi pada percobaan itu.
+const attemptOptions = computed(() => data.value?.latest_concepts ?? []);
+const conceptOptions = computed(
+    () => attemptOptions.value.find((q) => String(q.attempt_id) === String(form.value.attemptId))?.concepts ?? [],
+);
+
+async function loadLessons() {
+    try {
+        const { data: res } = await http.get(`/api/courses/${route.params.courseId}/lessons`, { params: { kind: 'remedial' } });
+        lessons.value = res.data.filter((l) => l.is_published);
+    } catch {
+        lessons.value = [];
+    }
+}
+
+async function submitRemedial() {
+    saving.value = true;
+    formErrors.value = {};
+    try {
+        await http.post(`/api/attempts/${form.value.attemptId}/remediation`, {
+            concept_id: Number(form.value.conceptId),
+            lesson_id: Number(form.value.lessonId),
+            note: form.value.note.trim() || null,
+        });
+        toast.success('Remedial ditambahkan.');
+        form.value = { attemptId: '', conceptId: '', lessonId: '', note: '' };
+        await load();
+    } catch (e) {
+        if (e.response?.status === 422) {
+            formErrors.value = fieldErrors(e);
+        } else {
+            toast.error(errorMessage(e));
+        }
+    } finally {
+        saving.value = false;
+    }
+}
+
+onMounted(() => {
+    load();
+    loadLessons();
+});
 watch(() => [route.params.courseId, route.params.studentId], load);
 </script>
 
@@ -130,6 +178,56 @@ watch(() => [route.params.courseId, route.params.studentId], load);
                     </li>
                 </ul>
             </div>
+
+                        <form v-if="attemptOptions.length" class="rounded-lg border border-slate-200 bg-white p-5" novalidate
+                @submit.prevent="submitRemedial">
+                <h2 class="font-semibold">Tambah remedial</h2>
+                <p class="mt-1 text-sm text-slate-600">
+                    Rekomendasi sistem tidak dapat dihapus. Remedial yang Anda tambahkan muncul di Remedial Saya milik siswa.
+                </p>
+                <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="rm-attempt" class="block text-sm font-medium text-slate-700">Percobaan (terakhir per kuis)</label>
+                        <select id="rm-attempt" v-model="form.attemptId" required
+                            class="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                            @change="form.conceptId = ''">
+                            <option value="" disabled>Pilih percobaan</option>
+                            <option v-for="q in attemptOptions" :key="q.attempt_id" :value="String(q.attempt_id)">{{ q.quiz.title }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rm-concept" class="block text-sm font-medium text-slate-700">Konsep</label>
+                        <select id="rm-concept" v-model="form.conceptId" required :disabled="!form.attemptId"
+                            class="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+                            <option value="" disabled>Pilih konsep</option>
+                            <option v-for="c in conceptOptions" :key="c.concept_id" :value="String(c.concept_id)">
+                                {{ c.concept }} ({{ score(c.percent) }})
+                            </option>
+                        </select>
+                        <p v-if="formErrors.concept_id" class="mt-1 text-sm text-red-700">{{ formErrors.concept_id[0] }}</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="rm-lesson" class="block text-sm font-medium text-slate-700">Materi remedial</label>
+                        <select id="rm-lesson" v-model="form.lessonId" required
+                            class="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+                            <option value="" disabled>{{ lessons.length ? 'Pilih materi' : 'Belum ada materi remedial terbit' }}</option>
+                            <option v-for="l in lessons" :key="l.id" :value="String(l.id)">{{ l.title }}</option>
+                        </select>
+                        <p v-if="formErrors.lesson_id" class="mt-1 text-sm text-red-700">{{ formErrors.lesson_id[0] }}</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="rm-note" class="block text-sm font-medium text-slate-700">Catatan (opsional)</label>
+                        <textarea id="rm-note" v-model="form.note" rows="3" maxlength="1000"
+                            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+                        <p v-if="formErrors.note" class="mt-1 text-sm text-red-700">{{ formErrors.note[0] }}</p>
+                    </div>
+                </div>
+                <button type="submit"
+                    :disabled="saving || !form.attemptId || !form.conceptId || !form.lessonId"
+                    class="mt-4 min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                    {{ saving ? 'Menyimpan...' : 'Tambah remedial' }}
+                </button>
+            </form>
 
             <div v-if="data.comparisons.length" class="rounded-lg border border-slate-200 bg-white p-5">
                 <h2 class="font-semibold">Perbandingan sebelum dan sesudah</h2>
