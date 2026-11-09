@@ -71,11 +71,23 @@ class LessonController extends Controller
         return new LessonResource($lesson);
     }
 
-    public function update(UpdateLessonRequest $request, Lesson $lesson): LessonResource
+    public function update(UpdateLessonRequest $request, Lesson $lesson): LessonResource|JsonResponse
     {
         Gate::authorize('update', $lesson);
 
         $data = $request->validated();
+
+        $unpublishing = $lesson->is_published
+            && array_key_exists('is_published', $data)
+            && ! $data['is_published'];
+
+        // OI-8: materi yang masih dipakai assignment 'assigned' tidak boleh ditarik dari terbit,
+        // karena siswa hanya dapat menyelesaikan materi terbit dan asesmen ulang akan terkunci permanen.
+        if ($unpublishing && RemediationAssignment::where('lesson_id', $lesson->id)->where('status', 'assigned')->exists()) {
+            return response()->json([
+                'message' => 'Materi tidak dapat ditarik dari terbit karena masih dipakai remedial yang belum selesai.',
+            ], 409);
+        }
 
         DB::transaction(function () use ($lesson, $data) {
             $lesson->update(collect($data)->except('concept_ids')->all());

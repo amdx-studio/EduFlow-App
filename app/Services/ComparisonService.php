@@ -48,12 +48,18 @@ class ComparisonService
                 'before' => $b,
                 'after' => $a,
                 'delta' => $delta,
-                'trend' => $delta >= $threshold ? 'improved' : ($delta <= -$threshold ? 'declined' : 'unchanged'),
+                'trend' => self::trend($delta, $threshold),
                 'reached_mastery' => $afterResult->mastery_level === MasteryService::MASTERED,
             ];
         }
 
         return ['status' => 'complete', 'note' => self::NOTE, 'concepts' => $concepts];
+    }
+
+    /** BR-014: selisih >= +delta meningkat, <= -delta menurun, selain itu tetap. */
+    public static function trend(float $delta, float $threshold): string
+    {
+        return $delta >= $threshold ? 'improved' : ($delta <= -$threshold ? 'declined' : 'unchanged');
     }
 
     private function lastSubmitted(User $student, int $quizId): ?QuizAttempt
