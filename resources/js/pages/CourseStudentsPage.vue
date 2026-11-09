@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import { errorMessage } from '../lib/errors';
 import { formatDateTime } from '../lib/format';
@@ -51,7 +51,7 @@ watch(() => route.params.courseId, load);
                 </thead>
                 <tbody>
                     <tr v-for="s in students" :key="s.id" class="border-t border-slate-100">
-                        <td class="px-4 py-2">{{ s.name }}</td>
+                        <td class="px-4 py-2"><RouterLink :to="`/courses/${route.params.courseId}/students/${s.id}`" class="text-indigo-700 hover:underline">{{ s.name }}</RouterLink></td>
                         <td class="px-4 py-2">{{ s.email }}</td>
                         <td class="px-4 py-2 whitespace-nowrap">{{ formatDateTime(s.enrolled_at) }}</td>
                     </tr>

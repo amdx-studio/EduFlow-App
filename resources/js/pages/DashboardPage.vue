@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import { errorMessage } from '../lib/errors';
 
@@ -147,7 +147,7 @@ watch(() => route.params.courseId, () => load());
                             </thead>
                             <tbody>
                                 <tr v-for="a in data.attention" :key="a.student.id" class="border-t border-slate-100">
-                                    <td class="px-3 py-2">{{ a.student.name }}</td>
+                                    <td class="px-3 py-2"><RouterLink :to="`/courses/${route.params.courseId}/students/${a.student.id}`" class="text-indigo-700 hover:underline">{{ a.student.name }}</RouterLink></td>
                                     <td class="px-3 py-2">
                                         <span v-for="(c, i) in a.concepts" :key="c.concept_id">
                                             {{ c.concept }} ({{ pct(c.percent) }}){{ i < a.concepts.length - 1 ? ', ' : '' }}
