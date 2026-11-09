@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RemediationController;
+use App\Http\Controllers\Api\StudentController;
 use App\Models\Course;
 use App\Models\LearningConcept;
 use App\Models\Lesson;
@@ -137,4 +138,10 @@ Route::get('quizzes/{quiz}/comparison', [ComparisonController::class, 'show'])
 
 // --- Phase 9: Dashboard (API-40) ---
 Route::get('courses/{course}/dashboard', [DashboardController::class, 'show'])
+    ->middleware(['auth:sanctum', 'role:teacher']);
+
+// --- Phase 9: Follow-up (API-38, API-41) ---
+Route::get('courses/{course}/students/{student}', [StudentController::class, 'show'])
+    ->middleware(['auth:sanctum', 'role:teacher']);
+Route::post('attempts/{attempt}/remediation', [RemediationController::class, 'store'])
     ->middleware(['auth:sanctum', 'role:teacher']);
