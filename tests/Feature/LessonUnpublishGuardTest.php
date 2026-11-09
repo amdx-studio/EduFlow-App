@@ -52,7 +52,8 @@ class LessonUnpublishGuardTest extends TestCase
         $q1 = $this->question($quiz, $concept, 1);
         $q2 = $this->question($quiz, $concept, 2);
         $pending = $this->remedialLesson($course, $concept, 'Dipakai', 1);
-        $free = $this->remedialLesson($course, $concept, 'Bebas', 3);
+        $other = $this->concept($course, 'Desimal');
+        $free = $this->remedialLesson($course, $other, 'Bebas', 3);
 
         $this->submitViaService($student, $quiz, [[$q1, false], [$q2, false]]);
 
