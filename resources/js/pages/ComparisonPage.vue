@@ -61,8 +61,8 @@ watch(() => [route.params.quizId, route.query.student_id], load);
         <p v-if="loading" class="mt-3 text-slate-600">Memuat perbandingan...</p>
 
         <div v-else-if="needsStudent" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-slate-600">
-            Pilih siswa untuk melihat perbandingannya. Pintu masuk dari halaman detail siswa tersedia di fase berikutnya;
-            sementara itu tambahkan <code class="rounded bg-slate-100 px-1">?student_id=</code> dan nomor siswa pada alamat halaman ini.
+            Pilih siswa untuk melihat perbandingannya. Buka perbandingan lewat halaman detail siswa (tab Siswa, pilih nama siswa);
+            atau tambahkan <code class="rounded bg-slate-100 px-1">?student_id=</code> dan nomor siswa pada alamat halaman ini.
         </div>
 
         <div v-else-if="notFound" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
