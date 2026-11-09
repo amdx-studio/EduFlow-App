@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ComparisonController;
 use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RemediationController;
+use App\Http\Controllers\Api\StudentController;
 use App\Models\Course;
 use App\Models\LearningConcept;
 use App\Models\Lesson;
@@ -133,3 +135,13 @@ Route::get('courses/{course}/remediation', [RemediationController::class, 'index
 // --- Phase 8: Comparison (API-39) ---
 Route::get('quizzes/{quiz}/comparison', [ComparisonController::class, 'show'])
     ->middleware('auth:sanctum');
+
+// --- Phase 9: Dashboard (API-40) ---
+Route::get('courses/{course}/dashboard', [DashboardController::class, 'show'])
+    ->middleware(['auth:sanctum', 'role:teacher']);
+
+// --- Phase 9: Follow-up (API-38, API-41) ---
+Route::get('courses/{course}/students/{student}', [StudentController::class, 'show'])
+    ->middleware(['auth:sanctum', 'role:teacher']);
+Route::post('attempts/{attempt}/remediation', [RemediationController::class, 'store'])
+    ->middleware(['auth:sanctum', 'role:teacher']);

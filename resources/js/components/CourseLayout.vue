@@ -117,6 +117,11 @@ watch(() => route.params.courseId, load);
                     active-class="!border-indigo-600 font-semibold !text-indigo-700">
                     Siswa
                 </RouterLink>
+                <RouterLink v-if="auth.isTeacher" :to="`/courses/${course.id}/dashboard`"
+                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
+                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
+                    Dashboard
+                </RouterLink>
             </nav>
 
             <div class="mt-4">
