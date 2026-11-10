@@ -1,6 +1,11 @@
 <script setup>
 import { reactive, ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
+import AuthShell from '../components/AuthShell.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseInput from '../components/ui/BaseInput.vue';
+import FormField from '../components/ui/FormField.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 import { errorMessage, fieldErrors } from '../lib/errors';
@@ -38,63 +43,46 @@ async function submit() {
 </script>
 
 <template>
-    <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-        <div class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h1 class="text-2xl font-bold text-indigo-700">EduFlow</h1>
-            <div class="mt-4 flex border-b border-slate-200 text-sm">
-                <RouterLink :to="{ name: 'login' }" class="px-4 py-2 text-slate-600 hover:text-indigo-700">Masuk</RouterLink>
-                <span class="border-b-2 border-indigo-600 px-4 py-2 font-semibold text-indigo-700">Daftar</span>
-            </div>
+    <AuthShell title="Buat akun" description="Daftar sebagai siswa atau guru.">
+        <form class="space-y-4" novalidate @submit.prevent="submit">
+            <InlineAlert v-if="message" tone="danger">{{ message }}</InlineAlert>
 
-            <form class="mt-5 space-y-4" novalidate @submit.prevent="submit">
-                <p v-if="message" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ message }}</p>
+            <FormField label="Nama" :error="errors.name?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <BaseInput :id="id" v-model="form.name" autocomplete="name" required
+                    :aria-describedby="describedby" :invalid="invalid" />
+            </FormField>
 
-                <div>
-                    <label for="name" class="block text-sm font-medium">Nama</label>
-                    <input id="name" v-model="form.name" type="text" autocomplete="name" required
-                        class="mt-1 block min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                    <p v-if="errors.name" class="mt-1 text-sm text-red-700">{{ errors.name[0] }}</p>
+            <FormField label="Email" :error="errors.email?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <BaseInput :id="id" v-model="form.email" type="email" autocomplete="email" required
+                    :aria-describedby="describedby" :invalid="invalid" />
+            </FormField>
+
+            <FormField label="Password" hint="Minimal 8 karakter." :error="errors.password?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <BaseInput :id="id" v-model="form.password" type="password" autocomplete="new-password" required
+                    :aria-describedby="describedby" :invalid="invalid" />
+            </FormField>
+
+            <fieldset>
+                <legend class="block text-sm font-medium text-slate-900">Peran</legend>
+                <div class="mt-1 flex gap-6 text-sm">
+                    <label class="flex min-h-10 items-center gap-2">
+                        <input v-model="form.role" type="radio" value="student" class="h-4 w-4 accent-brand-600" /> Siswa
+                    </label>
+                    <label class="flex min-h-10 items-center gap-2">
+                        <input v-model="form.role" type="radio" value="teacher" class="h-4 w-4 accent-brand-600" /> Guru
+                    </label>
                 </div>
+                <p v-if="errors.role" class="mt-1 text-sm text-danger-700" role="alert">{{ errors.role[0] }}</p>
+            </fieldset>
 
-                <div>
-                    <label for="email" class="block text-sm font-medium">Email</label>
-                    <input id="email" v-model="form.email" type="email" autocomplete="email" required
-                        class="mt-1 block min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                    <p v-if="errors.email" class="mt-1 text-sm text-red-700">{{ errors.email[0] }}</p>
-                </div>
+            <FormField v-if="form.role === 'teacher'" label="Kode guru" :error="errors.teacher_code?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <BaseInput :id="id" v-model="form.teacher_code" autocomplete="off"
+                    :aria-describedby="describedby" :invalid="invalid" />
+            </FormField>
 
-                <div>
-                    <label for="password" class="block text-sm font-medium">Password (minimal 8 karakter)</label>
-                    <input id="password" v-model="form.password" type="password" autocomplete="new-password" required
-                        class="mt-1 block min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                    <p v-if="errors.password" class="mt-1 text-sm text-red-700">{{ errors.password[0] }}</p>
-                </div>
-
-                <fieldset>
-                    <legend class="block text-sm font-medium">Peran</legend>
-                    <div class="mt-1 flex gap-6 text-sm">
-                        <label class="flex min-h-10 items-center gap-2">
-                            <input v-model="form.role" type="radio" value="student" /> Siswa
-                        </label>
-                        <label class="flex min-h-10 items-center gap-2">
-                            <input v-model="form.role" type="radio" value="teacher" /> Guru
-                        </label>
-                    </div>
-                    <p v-if="errors.role" class="mt-1 text-sm text-red-700">{{ errors.role[0] }}</p>
-                </fieldset>
-
-                <div v-if="form.role === 'teacher'">
-                    <label for="teacher_code" class="block text-sm font-medium">Kode guru</label>
-                    <input id="teacher_code" v-model="form.teacher_code" type="text" autocomplete="off"
-                        class="mt-1 block min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                    <p v-if="errors.teacher_code" class="mt-1 text-sm text-red-700">{{ errors.teacher_code[0] }}</p>
-                </div>
-
-                <button type="submit" :disabled="submitting"
-                    class="min-h-10 w-full rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                    {{ submitting ? 'Memproses...' : 'Daftar' }}
-                </button>
-            </form>
-        </div>
-    </div>
+            <BaseButton type="submit" class="w-full" :loading="submitting">
+                {{ submitting ? 'Memproses...' : 'Daftar' }}
+            </BaseButton>
+        </form>
+    </AuthShell>
 </template>

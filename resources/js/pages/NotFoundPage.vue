@@ -1,6 +1,12 @@
+<script setup>
+import BaseButton from '../components/ui/BaseButton.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+</script>
+
 <template>
-    <section class="py-10 text-center">
-        <h1 class="text-xl font-bold">Halaman tidak ditemukan</h1>
-        <RouterLink to="/courses" class="mt-4 inline-block text-indigo-700 underline">Ke daftar kelas</RouterLink>
+    <section class="mx-auto max-w-lg py-10">
+        <EmptyState as="h1" title="Halaman tidak ditemukan" description="Alamat yang Anda buka tidak ada atau sudah dipindahkan." icon="search">
+            <BaseButton :to="{ name: 'courses' }">Ke daftar kelas</BaseButton>
+        </EmptyState>
     </section>
 </template>
