@@ -1,58 +1,154 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EduFlow
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web LMS berbasis penguasaan konsep. Guru membuat kelas, konsep, materi, dan kuis yang tiap soalnya terhubung ke satu konsep. Sistem menilai kuis, menghitung penguasaan per konsep, merekomendasikan materi remedial beserta alasannya, membuka asesmen ulang setelah remedial selesai, lalu membandingkan hasil sebelum dan sesudah.
 
-## About Laravel
+Tampilan perbandingan memuat catatan "perubahan skor, bukan bukti sebab-akibat". EduFlow tidak mengklaim terbukti meningkatkan hasil belajar.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Stack:** Laravel 13, Vue 3 (JavaScript), Vue Router, Pinia, Axios, Tailwind CSS 4, Vite, PostgreSQL, Laravel Sanctum (mode SPA, cookie sesi).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prasyarat
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.3 atau lebih baru dengan ekstensi `pdo_pgsql`, `pgsql`, `mbstring`, `openssl`, `curl`, `fileinfo`, `zip` (cek: `php -m`).
+- Composer 2, Node.js dan npm, Git.
+- PostgreSQL. Versi yang diuji: 18.
+- Windows PowerShell: bila `npm` diblokir (`npm.ps1`), pakai `npm.cmd` atau jalankan `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 1. Ambil kode dan pasang dependensi
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/amdx-studio/EduFlow-App.git
+cd EduFlow-App
+composer install
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## 2. Siapkan database PostgreSQL
 
-## Contributing
+Dev dan test memakai satu server PostgreSQL lokal dengan dua schema: `eduflow` (aplikasi) dan `eduflow_test` (test). Dua role dipakai:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- `eduflow_admin`: hanya untuk migrasi.
+- `eduflow_app`: untuk aplikasi dan test. Sengaja tanpa hak DDL di schema `eduflow`.
 
-## Code of Conduct
+Masuk sebagai superuser (password dimasukkan di prompt):
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+psql -U postgres -h localhost
+```
 
-## Security Vulnerabilities
+Di prompt `postgres=#`, jalankan:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```sql
+CREATE ROLE eduflow_admin LOGIN;
+CREATE ROLE eduflow_app LOGIN;
+CREATE DATABASE eduflow OWNER eduflow_admin;
+REVOKE ALL ON DATABASE eduflow FROM PUBLIC;
+GRANT CONNECT ON DATABASE eduflow TO eduflow_app;
+\c eduflow
+CREATE SCHEMA eduflow AUTHORIZATION eduflow_admin;
+CREATE SCHEMA eduflow_test AUTHORIZATION eduflow_app;
+GRANT USAGE ON SCHEMA eduflow TO eduflow_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE eduflow_admin IN SCHEMA eduflow GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO eduflow_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE eduflow_admin IN SCHEMA eduflow GRANT USAGE, SELECT ON SEQUENCES TO eduflow_app;
+```
 
-## License
+Lalu atur password kedua role. Gunakan dua password berbeda, minimal 20 karakter, tanpa spasi dan tanpa tanda kutip tunggal. Pastikan prompt berbentuk `eduflow=#` (bukan `eduflow-#`) sebelum mengetik perintah ini; password tidak tampil saat diketik:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```text
+\password eduflow_admin
+\password eduflow_app
+\q
+```
+
+Jangan menulis password di berkas yang di-commit, di chat, atau di dokumen.
+
+## 3. Siapkan tiga file env
+
+Tiga file env bersifat per mesin dan tidak pernah di-commit (sudah masuk `.gitignore`).
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+(PowerShell: `Copy-Item .env.example .env`.)
+
+Di `.env`, isi `DB_PASSWORD` dengan password `eduflow_app` yang sebenarnya (hapus seluruh teks placeholder berikut tanda `<` dan `>`) dan, bila memakai nama database lain, `DB_DATABASE`. **Simpan `.env` lebih dulu, baru buat `.env.testing` dan `.env.migrate`**: keduanya disalin dari `.env` dan tidak ikut berubah bila `.env` diedit kemudian. Nilai lain di `.env.example` sudah sesuai (`DB_HOST=127.0.0.1`, `DB_DATABASE=eduflow`, `DB_USERNAME=eduflow_app`, `DB_SCHEMA=eduflow`, `SESSION_DRIVER=database`).
+
+Buat `.env.testing` dari `.env`, lalu ubah:
+
+```text
+APP_ENV=testing
+DB_SCHEMA=eduflow_test
+SESSION_DRIVER=array
+CACHE_STORE=array
+```
+
+Buat `.env.migrate` dari `.env`, lalu ubah:
+
+```text
+DB_USERNAME=eduflow_admin
+DB_PASSWORD=<password eduflow_admin>
+DB_SCHEMA=eduflow
+```
+
+Nilai password yang memuat karakter khusus ditulis di dalam tanda kutip tunggal. Tanda `<` dan `>` pada contoh hanya penanda: tulis password aslinya. Bila `.env.testing` atau `.env.migrate` tidak dibuat, test dan migrasi memakai `.env` dan gagal. Akses aplikasi selalu lewat `localhost:8000` (bukan `127.0.0.1`), sesuai `SANCTUM_STATEFUL_DOMAINS`.
+
+## 4. Migrasi
+
+Migrasi dijalankan sebagai `eduflow_admin` lewat `--env=migrate`:
+
+```bash
+php artisan migrate --env=migrate
+php artisan migrate:status
+```
+
+Harapan: semua migrasi `DONE`, lalu `migrate:status` (berjalan sebagai `eduflow_app`) menampilkan semuanya `Ran`. Setelah `git pull` yang membawa migrasi baru, jalankan perintah migrasi yang sama lagi.
+
+## 5. Test
+
+```bash
+php artisan test
+```
+
+Test hanya berjalan di schema `eduflow_test`. Bila koneksi default bukan `pgsql` atau `search_path` bukan `eduflow_test`, test dihentikan oleh pengaman di `tests/TestCase.php`; periksa `.env.testing`. Gunakan `php artisan test --filter=NamaTest` untuk menjalankan sebagian.
+
+Format kode: `vendor/bin/pint --test` (tanpa `--test` untuk memperbaiki otomatis).
+
+## 6. Jalankan aplikasi
+
+Di dua terminal:
+
+```bash
+php artisan serve
+npm run dev
+```
+
+Buka `http://localhost:8000`. Untuk build produksi aset: `npm run build`.
+
+Tidak ada seeder. Buat akun lewat halaman Daftar: satu akun guru (membuat kelas dan kuis) dan satu akun siswa (bergabung dengan kode kelas). Bila `TEACHER_INVITE_CODE` di `.env` terisi, pendaftaran guru meminta kode itu; kosong berarti terbuka (hanya untuk dev).
+
+## Arsitektur singkat
+
+`routes/api.php` → Controller (tipis) → FormRequest (validasi) → Policy dan scope kepemilikan → Service (logika) → Model; respons lewat API Resource. Aturan penguasaan, remedial, gate asesmen ulang, perbandingan, dan dashboard hanya ada di `app/Services`. Frontend Vue ada di `resources/js` dan dilayani Laravel dari satu origin. Otorisasi selalu di server; tombol yang disembunyikan di UI bukan kontrol akses.
+
+## Menu kerja tim
+
+- Branch per fase (`phase/N-nama`), commit `tipe(lingkup): ringkasan [ID]`, merge ke `main` dengan merge commit.
+- Jangan menjalankan `migrate:fresh` dengan `--env=migrate` kecuali memang ingin mengosongkan database lokal sendiri.
+- Bila rahasia terlanjur ter-commit, ganti kredensialnya.
+
+## Produksi
+
+Belum diputuskan (host dan database produksi masih terbuka). Perbedaan dari dev: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://<host>`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=<host>` (tanpa skema), `TEACHER_INVITE_CODE` terisi, password database yang kuat dan unik. `.env.migrate` tidak pernah dikirim ke server.
+
+## Masalah umum
+
+| Gejala | Penyebab dan langkah |
+|---|---|
+| `could not find driver` | Ekstensi `pdo_pgsql` belum aktif di `php.ini` |
+| `password authentication failed` | Password role belum diatur atau salah (bagian 2 dan 3) |
+| `connection refused` | Layanan PostgreSQL berhenti atau port bukan 5432 |
+| `permission denied for schema eduflow` saat migrasi | Migrasi dijalankan tanpa `--env=migrate` |
+| Test berhenti dengan pesan koneksi atau `search_path` | `.env.testing` belum benar (bagian 3) |
+| `no password supplied` saat test atau migrasi | `DB_PASSWORD` kosong di salah satu file env, atau `.env.testing` / `.env.migrate` belum dibuat dari `.env` yang sudah terisi (bagian 3) |
+| Login gagal atau error 419 | Buka lewat `http://localhost:8000` dan periksa `APP_URL` serta `SANCTUM_STATEFUL_DOMAINS` |

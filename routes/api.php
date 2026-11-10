@@ -20,6 +20,12 @@ use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use Illuminate\Support\Facades\Route;
 
+// P10.1: id di URL harus angka dan muat di bigint (maks 18 digit); selain itu 404, bukan 500.
+// Harus didefinisikan sebelum route pertama.
+foreach (['course', 'concept', 'lesson', 'quiz', 'question', 'attempt'] as $param) {
+    Route::pattern($param, '[0-9]{1,18}');
+}
+
 // Autentikasi (API-02..05). API-01 (csrf-cookie) disediakan Sanctum.
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
