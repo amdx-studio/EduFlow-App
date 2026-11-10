@@ -88,4 +88,13 @@ router.beforeEach(async (to) => {
     return true;
 });
 
+// Galeri komponen: hanya ada di mode dev, tidak ikut build produksi.
+if (import.meta.env.DEV) {
+    router.addRoute({
+        path: '/dev/komponen',
+        name: 'dev-gallery',
+        component: () => import('../pages/dev/ComponentGallery.vue'),
+    });
+}
+
 export default router;
