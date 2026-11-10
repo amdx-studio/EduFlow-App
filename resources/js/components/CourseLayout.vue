@@ -1,11 +1,19 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
-import { RouterLink, RouterView, useRoute } from 'vue-router';
+import { computed, onMounted, ref, watch } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 import http from '../api/http';
 import { errorMessage } from '../lib/errors';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
 import ConfirmDialog from './ConfirmDialog.vue';
+import Badge from './ui/Badge.vue';
+import BaseButton from './ui/BaseButton.vue';
+import CopyButton from './ui/CopyButton.vue';
+import EmptyState from './ui/EmptyState.vue';
+import InlineAlert from './ui/InlineAlert.vue';
+import PageHeader from './ui/PageHeader.vue';
+import Skeleton from './ui/Skeleton.vue';
+import TabNav from './ui/TabNav.vue';
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -17,6 +25,33 @@ const error = ref('');
 const notFound = ref(false);
 const confirmArchive = ref(false);
 const archiving = ref(false);
+
+const tabs = computed(() => {
+    if (!course.value) {
+        return [];
+    }
+    const base = `/courses/${course.value.id}`;
+    const list = [
+        { key: 'lessons', label: 'Materi', to: `${base}/lessons`, alsoActive: ['lesson-new', 'lesson-edit', 'lesson-read'] },
+    ];
+    if (auth.isTeacher) {
+        list.push({ key: 'concepts', label: 'Konsep', to: `${base}/concepts` });
+    }
+    list.push({
+        key: 'quizzes',
+        label: 'Kuis',
+        to: `${base}/quizzes`,
+        alsoActive: ['quiz-new', 'quiz-builder', 'quiz-comparison'],
+    });
+    if (auth.isStudent) {
+        list.push({ key: 'remediation', label: 'Remedial Saya', to: `${base}/remediation` });
+    }
+    if (auth.isTeacher) {
+        list.push({ key: 'students', label: 'Siswa', to: `${base}/students`, alsoActive: ['student-detail'] });
+        list.push({ key: 'dashboard', label: 'Dashboard', to: `${base}/dashboard` });
+    }
+    return list;
+});
 
 async function load() {
     loading.value = true;
@@ -57,72 +92,48 @@ watch(() => route.params.courseId, load);
 
 <template>
     <section>
-        <p v-if="loading" class="text-slate-600">Memuat kelas...</p>
-
-        <div v-else-if="notFound" class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p class="font-semibold">Kelas tidak ditemukan.</p>
-            <RouterLink to="/courses" class="mt-2 inline-block text-indigo-700 underline">Kembali ke daftar kelas</RouterLink>
+        <div v-if="loading" class="space-y-3" role="status" aria-busy="true">
+            <Skeleton class="h-4 w-24" />
+            <Skeleton class="h-8 w-2/3" />
+            <Skeleton class="h-4 w-1/2" />
+            <Skeleton class="h-10 w-full" />
+            <span class="sr-only">Memuat kelas...</span>
         </div>
 
-        <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <EmptyState v-else-if="notFound" as="h1" title="Kelas tidak ditemukan" icon="alert-triangle">
+            <BaseButton variant="secondary" :to="{ name: 'courses' }">Kembali ke daftar kelas</BaseButton>
+        </EmptyState>
+
+        <InlineAlert v-else-if="error" tone="danger" title="Kelas tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
         <template v-else-if="course">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <RouterLink to="/courses" class="text-sm text-indigo-700 hover:underline">&larr; Daftar kelas</RouterLink>
-                    <h1 class="mt-1 text-xl font-bold">
-                        {{ course.title }}
-                        <span v-if="course.is_archived" class="ml-2 rounded bg-slate-200 px-2 py-0.5 align-middle text-xs font-normal text-slate-700">Arsip</span>
-                    </h1>
-                    <p v-if="course.description" class="mt-1 text-sm text-slate-600">{{ course.description }}</p>
-                    <p v-if="auth.isTeacher" class="mt-2 text-sm text-slate-600">
-                        Kode gabung:
-                        <code class="rounded bg-slate-100 px-2 py-1 font-mono font-semibold tracking-wider">{{ course.join_code }}</code>
-                    </p>
-                    <p v-else class="mt-2 text-sm text-slate-600">Guru: {{ course.teacher_name }}</p>
-                </div>
-                <button v-if="auth.isTeacher && !course.is_archived" type="button"
-                    class="min-h-10 rounded-md border border-red-300 px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                    @click="confirmArchive = true">
-                    Arsipkan kelas
-                </button>
-            </div>
+            <PageHeader
+                :title="course.title"
+                :description="course.description ?? ''"
+                :breadcrumbs="[{ label: 'Kelas', to: { name: 'courses' } }, { label: course.title }]"
+            >
+                <template #meta>
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+                        <Badge v-if="course.is_archived">Arsip</Badge>
+                        <span v-if="auth.isTeacher" class="flex flex-wrap items-center gap-2">
+                            Kode gabung:
+                            <code class="rounded bg-slate-100 px-2 py-1 font-mono font-semibold tracking-wider text-slate-900">{{ course.join_code }}</code>
+                            <CopyButton :value="course.join_code" />
+                        </span>
+                        <span v-else>Guru: {{ course.teacher_name }}</span>
+                    </div>
+                </template>
+                <template v-if="auth.isTeacher && !course.is_archived" #actions>
+                    <BaseButton variant="secondary" @click="confirmArchive = true">Arsipkan kelas</BaseButton>
+                </template>
+            </PageHeader>
 
-            <nav class="mt-4 flex overflow-x-auto border-b border-slate-200 text-sm" aria-label="Tab kelas">
-                <RouterLink :to="`/courses/${course.id}/lessons`"
-                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
-                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
-                    Materi
-                </RouterLink>
-                <RouterLink v-if="auth.isTeacher" :to="`/courses/${course.id}/concepts`"
-                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
-                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
-                    Konsep
-                </RouterLink>
-                <RouterLink :to="`/courses/${course.id}/quizzes`"
-                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
-                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
-                    Kuis
-                </RouterLink>
-                <RouterLink v-if="auth.isStudent" :to="`/courses/${course.id}/remediation`"
-                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
-                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
-                    Remedial Saya
-                </RouterLink>
-                <RouterLink v-if="auth.isTeacher" :to="`/courses/${course.id}/students`"
-                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
-                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
-                    Siswa
-                </RouterLink>
-                <RouterLink v-if="auth.isTeacher" :to="`/courses/${course.id}/dashboard`"
-                    class="shrink-0 border-b-2 border-transparent px-4 py-2 text-slate-600 hover:text-indigo-700"
-                    active-class="!border-indigo-600 font-semibold !text-indigo-700">
-                    Dashboard
-                </RouterLink>
-            </nav>
+            <TabNav class="mt-4" :tabs="tabs" label="Tab kelas" />
 
             <div class="mt-4">
                 <RouterView />

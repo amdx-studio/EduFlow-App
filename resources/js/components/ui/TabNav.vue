@@ -10,6 +10,9 @@ defineProps({
 const nav = ref(null);
 const route = useRoute();
 
+// Tab dapat ditandai aktif juga untuk rute lain lewat tab.alsoActive (daftar nama rute).
+const isOn = (tab, isActive) => isActive || (tab.alsoActive?.includes(route.name) ?? false);
+
 function reveal() {
     nav.value?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
 }
@@ -30,8 +33,8 @@ watch(() => route.fullPath, () => nextTick(reveal));
             <a
                 :href="href"
                 class="shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150"
-                :class="isActive ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-600 hover:text-brand-700'"
-                :aria-current="isActive ? 'page' : undefined"
+                :class="isOn(tab, isActive) ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-600 hover:text-brand-700'"
+                :aria-current="isOn(tab, isActive) ? 'page' : undefined"
                 @click="navigate"
             >
                 {{ tab.label }}

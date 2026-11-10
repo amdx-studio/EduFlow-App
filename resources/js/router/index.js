@@ -97,4 +97,33 @@ if (import.meta.env.DEV) {
     });
 }
 
+// Judul tab per halaman (TC-043).
+const TITLES = {
+    login: 'Masuk',
+    register: 'Daftar',
+    courses: 'Daftar kelas',
+    'course-lessons': 'Materi',
+    'lesson-new': 'Materi baru',
+    'lesson-edit': 'Ubah materi',
+    'lesson-read': 'Baca materi',
+    'course-concepts': 'Konsep',
+    'course-quizzes': 'Kuis',
+    'quiz-new': 'Kuis baru',
+    'quiz-builder': 'Kuis',
+    'quiz-comparison': 'Perbandingan',
+    'course-students': 'Siswa',
+    'student-detail': 'Detail siswa',
+    'course-remediation': 'Remedial saya',
+    'course-dashboard': 'Dashboard',
+    'attempt-result': 'Hasil kuis',
+    attempt: 'Mengerjakan kuis',
+    forbidden: 'Tidak diizinkan',
+    'not-found': 'Halaman tidak ditemukan',
+    'dev-gallery': 'Galeri komponen',
+};
+
+router.afterEach((to) => {
+    const title = TITLES[to.name];
+    document.title = title ? `${title} - EduFlow` : 'EduFlow';
+});
 export default router;
