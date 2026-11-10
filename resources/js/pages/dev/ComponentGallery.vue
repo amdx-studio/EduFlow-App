@@ -13,6 +13,12 @@ import InlineAlert from '../../components/ui/InlineAlert.vue';
 import EmptyState from '../../components/ui/EmptyState.vue';
 import Skeleton from '../../components/ui/Skeleton.vue';
 import PageHeader from '../../components/ui/PageHeader.vue';
+import { useToastStore } from '../../stores/toast';
+import Modal from '../../components/ui/Modal.vue';
+import TabNav from '../../components/ui/TabNav.vue';
+import DataTable from '../../components/ui/DataTable.vue';
+import Dropdown from '../../components/ui/Dropdown.vue';
+import ConfirmDialog from '../../components/ConfirmDialog.vue';
 
 // Nama kelas ditulis utuh agar terdeteksi Tailwind (tidak disusun dinamis).
 const SWATCHES = {
@@ -31,6 +37,34 @@ const demoEmail = ref('abc');
 const demoBody = ref('');
 const demoRole = ref('student');
 const crumbs = [{ label: 'Kelas', to: { name: 'courses' } }, { label: 'Matematika 7A' }];
+const toast = useToastStore();
+const modalOpen = ref(false);
+const confirmOpen = ref(false);
+const confirmBusy = ref(false);
+const lastMenu = ref('-');
+const demoTabs = [
+    { label: 'Galeri', to: { name: 'dev-gallery' } },
+    { label: 'Kelas', to: { name: 'courses' } },
+    { label: 'Dilarang', to: { name: 'forbidden' } },
+];
+const menuItems = [
+    { key: 'akun', label: 'Akun', icon: 'user', to: { name: 'courses' } },
+    { key: 'salin', label: 'Salin kode', icon: 'copy' },
+    { key: 'hapus', label: 'Hapus', icon: 'trash', danger: true },
+];
+const rows = [
+    { name: 'Ani Rahma', a: 82, b: 74, c: 90, tone: 'success', level: 'Dikuasai' },
+    { name: 'Budi Santoso', a: 61, b: 55, c: 48, tone: 'warning', level: 'Berkembang' },
+    { name: 'Citra Dewi', a: 35, b: 40, c: 28, tone: 'danger', level: 'Belum dikuasai' },
+];
+function fakeConfirm() {
+    confirmBusy.value = true;
+    setTimeout(() => {
+        confirmBusy.value = false;
+        confirmOpen.value = false;
+        toast.success('Dikonfirmasi.');
+    }, 1200);
+}
 </script>
 
 <template>
@@ -187,6 +221,74 @@ const crumbs = [{ label: 'Kelas', to: { name: 'courses' } }, { label: 'Matematik
                     </template>
                 </PageHeader>
             </BaseCard>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Modal, dialog konfirmasi, dan toast</h2>
+            <div class="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <BaseButton @click="modalOpen = true">Buka modal</BaseButton>
+                <BaseButton variant="danger" @click="confirmOpen = true">Buka konfirmasi (1,2 dtk memproses)</BaseButton>
+                <BaseButton variant="secondary" @click="toast.success('Perubahan disimpan.')">Toast sukses</BaseButton>
+                <BaseButton variant="secondary" @click="toast.error('Tidak dapat terhubung ke server.')">Toast galat</BaseButton>
+            </div>
+            <Modal v-model="modalOpen" title="Contoh modal" description="Tekan Tab, Shift+Tab, dan Esc untuk menguji fokus.">
+                <FormField label="Nama" v-slot="{ id }">
+                    <BaseInput :id="id" v-model="demoText" data-autofocus />
+                </FormField>
+                <template #footer>
+                    <BaseButton variant="secondary" @click="modalOpen = false">Batal</BaseButton>
+                    <BaseButton @click="modalOpen = false">Simpan</BaseButton>
+                </template>
+            </Modal>
+            <ConfirmDialog
+                :open="confirmOpen"
+                title="Hapus contoh?"
+                message="Tindakan ini hanya contoh dan tidak mengubah data."
+                confirm-label="Ya, hapus"
+                :busy="confirmBusy"
+                @confirm="fakeConfirm"
+                @cancel="confirmOpen = false" />
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Tab (catatan: mengklik tab pindah halaman)</h2>
+            <BaseCard class="mt-3">
+                <TabNav :tabs="demoTabs" label="Contoh tab" />
+            </BaseCard>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Tabel data (geser ke samping pada layar sempit)</h2>
+            <div class="mt-3">
+                <DataTable label="Contoh tabel penguasaan siswa" caption="Penguasaan siswa per konsep">
+                    <thead>
+                        <tr>
+                            <th scope="col">Siswa</th>
+                            <th scope="col">Pecahan</th>
+                            <th scope="col">Desimal</th>
+                            <th scope="col">Perbandingan</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="r in rows" :key="r.name">
+                            <td class="whitespace-nowrap font-medium">{{ r.name }}</td>
+                            <td class="tabular-nums">{{ r.a }}%</td>
+                            <td class="tabular-nums">{{ r.b }}%</td>
+                            <td class="tabular-nums">{{ r.c }}%</td>
+                            <td><Badge :tone="r.tone">{{ r.level }}</Badge></td>
+                        </tr>
+                    </tbody>
+                </DataTable>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Menu dropdown</h2>
+            <div class="mt-3 flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 pb-40 shadow-sm">
+                <Dropdown label="Budi Santoso" icon="user" :items="menuItems" @select="lastMenu = $event" />
+                <span class="text-sm text-slate-600">Pilihan terakhir: {{ lastMenu }}</span>
+            </div>
         </section>
     </div>
 </template>
