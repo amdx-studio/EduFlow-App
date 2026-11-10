@@ -72,7 +72,7 @@ php artisan key:generate
 
 (PowerShell: `Copy-Item .env.example .env`.)
 
-Di `.env`, isi `DB_PASSWORD` dengan password `eduflow_app`. Nilai lain di `.env.example` sudah sesuai (`DB_HOST=127.0.0.1`, `DB_DATABASE=eduflow`, `DB_USERNAME=eduflow_app`, `DB_SCHEMA=eduflow`, `SESSION_DRIVER=database`).
+Di `.env`, isi `DB_PASSWORD` dengan password `eduflow_app` yang sebenarnya (hapus seluruh teks placeholder berikut tanda `<` dan `>`) dan, bila memakai nama database lain, `DB_DATABASE`. **Simpan `.env` lebih dulu, baru buat `.env.testing` dan `.env.migrate`**: keduanya disalin dari `.env` dan tidak ikut berubah bila `.env` diedit kemudian. Nilai lain di `.env.example` sudah sesuai (`DB_HOST=127.0.0.1`, `DB_DATABASE=eduflow`, `DB_USERNAME=eduflow_app`, `DB_SCHEMA=eduflow`, `SESSION_DRIVER=database`).
 
 Buat `.env.testing` dari `.env`, lalu ubah:
 
@@ -91,7 +91,7 @@ DB_PASSWORD=<password eduflow_admin>
 DB_SCHEMA=eduflow
 ```
 
-Nilai password yang memuat karakter khusus ditulis di dalam tanda kutip tunggal. Akses aplikasi selalu lewat `localhost:8000` (bukan `127.0.0.1`), sesuai `SANCTUM_STATEFUL_DOMAINS`.
+Nilai password yang memuat karakter khusus ditulis di dalam tanda kutip tunggal. Tanda `<` dan `>` pada contoh hanya penanda: tulis password aslinya. Bila `.env.testing` atau `.env.migrate` tidak dibuat, test dan migrasi memakai `.env` dan gagal. Akses aplikasi selalu lewat `localhost:8000` (bukan `127.0.0.1`), sesuai `SANCTUM_STATEFUL_DOMAINS`.
 
 ## 4. Migrasi
 
@@ -150,4 +150,5 @@ Belum diputuskan (host dan database produksi masih terbuka). Perbedaan dari dev:
 | `connection refused` | Layanan PostgreSQL berhenti atau port bukan 5432 |
 | `permission denied for schema eduflow` saat migrasi | Migrasi dijalankan tanpa `--env=migrate` |
 | Test berhenti dengan pesan koneksi atau `search_path` | `.env.testing` belum benar (bagian 3) |
+| `no password supplied` saat test atau migrasi | `DB_PASSWORD` kosong di salah satu file env, atau `.env.testing` / `.env.migrate` belum dibuat dari `.env` yang sudah terisi (bagian 3) |
 | Login gagal atau error 419 | Buka lewat `http://localhost:8000` dan periksa `APP_URL` serta `SANCTUM_STATEFUL_DOMAINS` |
