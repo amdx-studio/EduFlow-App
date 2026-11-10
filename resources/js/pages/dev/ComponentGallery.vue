@@ -1,6 +1,18 @@
 <script setup>
 import BaseIcon from '../../components/ui/BaseIcon.vue';
 import { ICONS } from '../../components/ui/icons';
+import { ref } from 'vue';
+import BaseButton from '../../components/ui/BaseButton.vue';
+import FormField from '../../components/ui/FormField.vue';
+import BaseInput from '../../components/ui/BaseInput.vue';
+import BaseTextarea from '../../components/ui/BaseTextarea.vue';
+import BaseSelect from '../../components/ui/BaseSelect.vue';
+import BaseCard from '../../components/ui/BaseCard.vue';
+import Badge from '../../components/ui/Badge.vue';
+import InlineAlert from '../../components/ui/InlineAlert.vue';
+import EmptyState from '../../components/ui/EmptyState.vue';
+import Skeleton from '../../components/ui/Skeleton.vue';
+import PageHeader from '../../components/ui/PageHeader.vue';
 
 // Nama kelas ditulis utuh agar terdeteksi Tailwind (tidak disusun dinamis).
 const SWATCHES = {
@@ -14,6 +26,11 @@ const SWATCHES = {
 const LABELS = { brand: 'Merek (brand)', success: 'Sukses', warning: 'Peringatan', danger: 'Bahaya', info: 'Info' };
 const names = Object.keys(ICONS);
 const shade = (cls) => cls.split('-').pop();
+const demoText = ref('');
+const demoEmail = ref('abc');
+const demoBody = ref('');
+const demoRole = ref('student');
+const crumbs = [{ label: 'Kelas', to: { name: 'courses' } }, { label: 'Matematika 7A' }];
 </script>
 
 <template>
@@ -70,6 +87,106 @@ const shade = (cls) => cls.split('-').pop();
                 </button>
                 <input type="text" placeholder="Kolom isian" class="min-h-10 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Tombol</h2>
+            <div class="mt-3 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex flex-wrap items-center gap-3">
+                    <BaseButton>Primer</BaseButton>
+                    <BaseButton variant="secondary">Sekunder</BaseButton>
+                    <BaseButton variant="danger">Bahaya</BaseButton>
+                    <BaseButton variant="ghost">Ghost</BaseButton>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <BaseButton size="sm">Kecil</BaseButton>
+                    <BaseButton :loading="true">Memproses</BaseButton>
+                    <BaseButton :disabled="true">Nonaktif</BaseButton>
+                    <BaseButton variant="secondary" :to="{ name: 'courses' }">Tautan ke Kelas</BaseButton>
+                    <BaseButton variant="secondary"><BaseIcon name="plus" size="sm" />Dengan ikon</BaseButton>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Formulir</h2>
+            <BaseCard class="mt-3">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <FormField label="Nama kelas" hint="Maksimal 100 karakter." required v-slot="{ id, describedby, invalid }">
+                        <BaseInput :id="id" :aria-describedby="describedby" :invalid="invalid" v-model="demoText" placeholder="Contoh: Matematika 7A" />
+                    </FormField>
+                    <FormField label="Email" error="Format email tidak valid." v-slot="{ id, describedby, invalid }">
+                        <BaseInput :id="id" :aria-describedby="describedby" :invalid="invalid" v-model="demoEmail" type="email" />
+                    </FormField>
+                    <FormField label="Deskripsi" v-slot="{ id, describedby, invalid }">
+                        <BaseTextarea :id="id" :aria-describedby="describedby" :invalid="invalid" v-model="demoBody" />
+                    </FormField>
+                    <FormField label="Peran" v-slot="{ id, describedby, invalid }">
+                        <BaseSelect :id="id" :aria-describedby="describedby" :invalid="invalid" v-model="demoRole">
+                            <option value="student">Siswa</option>
+                            <option value="teacher">Guru</option>
+                        </BaseSelect>
+                    </FormField>
+                </div>
+            </BaseCard>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Kartu dan lencana</h2>
+            <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                <BaseCard>
+                    <p class="font-semibold">Kartu dengan isi</p>
+                    <p class="mt-1 text-sm text-slate-600">Kartu memakai sudut xl, batas, dan bayangan kecil.</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <Badge>Netral</Badge>
+                        <Badge tone="brand">Merek</Badge>
+                        <Badge tone="success">Dikuasai</Badge>
+                        <Badge tone="warning">Berkembang</Badge>
+                        <Badge tone="danger">Belum dikuasai</Badge>
+                        <Badge tone="info">Info</Badge>
+                    </div>
+                </BaseCard>
+                <BaseCard :padded="false">
+                    <ul class="divide-y divide-slate-200 text-sm">
+                        <li class="px-4 py-3">Baris pertama</li>
+                        <li class="px-4 py-3">Baris kedua</li>
+                        <li class="px-4 py-3">Baris ketiga</li>
+                    </ul>
+                </BaseCard>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Peringatan, keadaan kosong, dan memuat</h2>
+            <div class="mt-3 space-y-3">
+                <InlineAlert tone="info" title="Info">Teks informasi untuk pengguna.</InlineAlert>
+                <InlineAlert tone="success" title="Berhasil">Perubahan sudah disimpan.</InlineAlert>
+                <InlineAlert tone="warning" title="Perhatian">Kelas ini sudah diarsipkan.</InlineAlert>
+                <InlineAlert tone="danger" title="Gagal">Tidak dapat terhubung ke server.</InlineAlert>
+                <EmptyState title="Belum ada materi" description="Tambahkan materi pertama untuk kelas ini." icon="book-open">
+                    <BaseButton><BaseIcon name="plus" size="sm" />Tambah materi</BaseButton>
+                </EmptyState>
+                <BaseCard>
+                    <div class="space-y-2" role="status" aria-busy="true">
+                        <Skeleton class="h-5 w-1/3" />
+                        <Skeleton class="h-4 w-full" />
+                        <Skeleton class="h-4 w-2/3" />
+                        <span class="sr-only">Memuat...</span>
+                    </div>
+                </BaseCard>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold">Header halaman</h2>
+            <BaseCard class="mt-3">
+                <PageHeader title="Matematika 7A" description="Kelas pecahan dan perbandingan." :breadcrumbs="crumbs">
+                    <template #actions>
+                        <BaseButton variant="secondary" size="sm">Arsipkan</BaseButton>
+                        <BaseButton size="sm"><BaseIcon name="plus" size="sm" />Materi baru</BaseButton>
+                    </template>
+                </PageHeader>
+            </BaseCard>
         </section>
     </div>
 </template>
