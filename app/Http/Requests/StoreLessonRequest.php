@@ -41,7 +41,7 @@ class StoreLessonRequest extends FormRequest
     {
         return [
             function ($validator) {
-                if ($this->input('kind') === 'remedial' && count($this->input('concept_ids', [])) < 1) {
+                if ($this->input('kind') === 'remedial' && count((array) $this->input('concept_ids', [])) < 1) {
                     $validator->errors()->add('concept_ids', 'Materi remedial wajib terhubung ke minimal 1 konsep.');
                 }
             },

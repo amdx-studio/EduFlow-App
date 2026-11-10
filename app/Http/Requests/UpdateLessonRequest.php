@@ -49,7 +49,7 @@ class UpdateLessonRequest extends FormRequest
                 }
 
                 $count = $this->has('concept_ids')
-                    ? count($this->input('concept_ids', []))
+                    ? count((array) $this->input('concept_ids', []))
                     : $lesson->concepts()->count();
 
                 if ($count < 1) {
