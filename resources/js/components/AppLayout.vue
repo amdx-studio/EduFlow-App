@@ -61,7 +61,7 @@ async function logout() {
                 </div>
                 <div class="flex min-w-0 items-center gap-3">
                     <span class="hidden sm:inline-flex"><Badge tone="brand">{{ roleLabel }}</Badge></span>
-                    <Dropdown :label="auth.user?.name ?? 'Akun'" icon="user" :items="menuItems" @select="onSelect" />
+                    <Dropdown :label="auth.user?.name ?? 'Akun'" icon="user" collapse-label :items="menuItems" @select="onSelect" />
                 </div>
             </div>
         </header>
