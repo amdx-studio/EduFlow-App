@@ -1,7 +1,13 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import http from '../api/http';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import BaseInput from '../components/ui/BaseInput.vue';
+import BaseSelect from '../components/ui/BaseSelect.vue';
+import FormField from '../components/ui/FormField.vue';
 import { errorMessage, fieldErrors } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 
@@ -67,69 +73,61 @@ onMounted(loadBases);
 
 <template>
     <section>
-        <RouterLink :to="`/courses/${courseId}/quizzes`" class="text-sm text-indigo-700 hover:underline">
-            &larr; Daftar kuis
-        </RouterLink>
-        <h2 class="mt-2 text-lg font-bold">Buat kuis</h2>
+        <BaseButton variant="ghost" size="sm" :to="`/courses/${courseId}/quizzes`">
+            <BaseIcon name="arrow-left" size="sm" />Daftar kuis
+        </BaseButton>
+        <h2 class="mt-2 text-lg font-semibold">Buat kuis</h2>
 
-        <form class="mt-3 max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-4" @submit.prevent="save">
-            <div>
-                <label for="quiz-title" class="block text-sm font-medium">Judul</label>
-                <input id="quiz-title" v-model="form.title" type="text" maxlength="150" required
-                    class="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                <p v-if="errors.title" class="mt-1 text-sm text-red-700">{{ errors.title[0] }}</p>
-            </div>
+        <BaseCard class="mt-3 max-w-xl">
+            <form class="space-y-4" novalidate @submit.prevent="save">
+                <FormField label="Judul" required :error="errors.title?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                    <BaseInput :id="id" v-model="form.title" maxlength="150" required
+                        :aria-describedby="describedby" :invalid="invalid" />
+                </FormField>
 
-            <fieldset>
-                <legend class="block text-sm font-medium">Jenis kuis</legend>
-                <div class="mt-1 flex flex-wrap gap-4 text-sm">
-                    <label class="inline-flex min-h-10 items-center gap-2">
-                        <input v-model="form.kind" type="radio" value="assessment" />
-                        Asesmen
-                    </label>
-                    <label class="inline-flex min-h-10 items-center gap-2">
-                        <input v-model="form.kind" type="radio" value="reassessment" />
-                        Asesmen ulang
-                    </label>
+                <fieldset>
+                    <legend class="block text-sm font-medium text-slate-900">Jenis kuis</legend>
+                    <div class="mt-1 flex flex-wrap gap-4 text-sm">
+                        <label class="inline-flex min-h-10 items-center gap-2">
+                            <input v-model="form.kind" type="radio" value="assessment" class="h-4 w-4 accent-brand-600" />
+                            Asesmen
+                        </label>
+                        <label class="inline-flex min-h-10 items-center gap-2">
+                            <input v-model="form.kind" type="radio" value="reassessment" class="h-4 w-4 accent-brand-600" />
+                            Asesmen ulang
+                        </label>
+                    </div>
+                    <p v-if="errors.kind" class="mt-1 text-sm text-danger-700" role="alert">{{ errors.kind[0] }}</p>
+                </fieldset>
+
+                <FormField v-if="isReassessment" label="Kuis dasar" :error="errors.base_quiz_id?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                    <BaseSelect :id="id" v-model="form.base_quiz_id" :disabled="loadingBases"
+                        :aria-describedby="describedby" :invalid="invalid">
+                        <option value="">Pilih kuis dasar</option>
+                        <option v-for="quiz in baseOptions" :key="quiz.id" :value="quiz.id">{{ quiz.title }}</option>
+                    </BaseSelect>
+                    <p v-if="loadingBases" class="mt-1 text-sm text-slate-600">Memuat daftar kuis...</p>
+                    <p v-else-if="basesFailed" class="mt-1 flex flex-wrap items-center gap-2 text-sm text-danger-700">
+                        Daftar kuis dasar gagal dimuat.
+                        <BaseButton variant="secondary" size="sm" @click="loadBases">Coba lagi</BaseButton>
+                    </p>
+                    <p v-else-if="baseOptions.length === 0" class="mt-1 text-sm text-slate-600">
+                        Belum ada asesmen yang terbit di kelas ini. Terbitkan kuis dasar lebih dulu.
+                    </p>
+                </FormField>
+
+                <FormField label="Percobaan maksimal" required :error="errors.max_attempts?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                    <div class="w-28">
+                        <BaseInput :id="id" v-model="form.max_attempts" type="number" min="1" max="65535" required
+                            :aria-describedby="describedby" :invalid="invalid" />
+                    </div>
+                </FormField>
+
+                <div class="flex gap-2">
+                    <BaseButton type="submit" :loading="saving">{{ saving ? 'Menyimpan...' : 'Buat kuis' }}</BaseButton>
+                    <BaseButton variant="secondary" :to="`/courses/${courseId}/quizzes`">Batal</BaseButton>
                 </div>
-                <p v-if="errors.kind" class="mt-1 text-sm text-red-700">{{ errors.kind[0] }}</p>
-            </fieldset>
-
-            <div v-if="isReassessment">
-                <label for="quiz-base" class="block text-sm font-medium">Kuis dasar</label>
-                <select id="quiz-base" v-model="form.base_quiz_id" :disabled="loadingBases"
-                    class="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 py-2">
-                    <option value="">Pilih kuis dasar</option>
-                    <option v-for="quiz in baseOptions" :key="quiz.id" :value="quiz.id">{{ quiz.title }}</option>
-                </select>
-                <p v-if="loadingBases" class="mt-1 text-sm text-slate-600">Memuat daftar kuis...</p>
-                <p v-else-if="basesFailed" class="mt-1 text-sm text-red-700">
-                    Daftar kuis dasar gagal dimuat.
-                    <button type="button" class="underline" @click="loadBases">Coba lagi</button>
-                </p>
-                <p v-else-if="baseOptions.length === 0" class="mt-1 text-sm text-slate-600">
-                    Belum ada asesmen yang terbit di kelas ini. Terbitkan kuis dasar lebih dulu.
-                </p>
-                <p v-if="errors.base_quiz_id" class="mt-1 text-sm text-red-700">{{ errors.base_quiz_id[0] }}</p>
-            </div>
-
-            <div>
-                <label for="quiz-attempts" class="block text-sm font-medium">Percobaan maksimal</label>
-                <input id="quiz-attempts" v-model.number="form.max_attempts" type="number" min="1" max="65535" required
-                    class="mt-1 min-h-10 w-28 rounded-md border border-slate-300 px-3 py-2" />
-                <p v-if="errors.max_attempts" class="mt-1 text-sm text-red-700">{{ errors.max_attempts[0] }}</p>
-            </div>
-
-            <div class="flex gap-2">
-                <button type="submit" :disabled="saving"
-                    class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                    {{ saving ? 'Menyimpan...' : 'Buat kuis' }}
-                </button>
-                <RouterLink :to="`/courses/${courseId}/quizzes`"
-                    class="inline-flex min-h-10 items-center rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100">
-                    Batal
-                </RouterLink>
-            </div>
-        </form>
+            </form>
+        </BaseCard>
     </section>
 </template>

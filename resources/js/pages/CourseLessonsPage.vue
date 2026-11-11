@@ -1,8 +1,16 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import Badge from '../components/ui/Badge.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
+import { RouterLink } from 'vue-router';
 import { errorMessage } from '../lib/errors';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
@@ -53,60 +61,64 @@ watch(() => route.params.courseId, load);
 <template>
     <section>
         <div v-if="auth.isTeacher" class="mb-4">
-            <RouterLink :to="`/courses/${route.params.courseId}/lessons/new`"
-                class="inline-flex min-h-10 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-                Tambah materi
-            </RouterLink>
+            <BaseButton :to="`/courses/${route.params.courseId}/lessons/new`">
+                <BaseIcon name="plus" size="sm" />Tambah materi
+            </BaseButton>
         </div>
-        <p v-if="loading" class="text-slate-600">Memuat materi...</p>
 
-        <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <div v-if="loading" class="space-y-2" role="status" aria-busy="true">
+            <Skeleton class="h-20 w-full" />
+            <Skeleton class="h-20 w-full" />
+            <Skeleton class="h-20 w-full" />
+            <span class="sr-only">Memuat materi...</span>
+        </div>
+
+        <InlineAlert v-else-if="error" tone="danger" title="Materi tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
-        <div v-else-if="lessons.length === 0"
-            class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-            {{ auth.isTeacher ? 'Belum ada materi. Materi yang Anda buat akan muncul di sini.' : 'Belum ada materi yang terbit di kelas ini.' }}
-        </div>
+        <EmptyState
+            v-else-if="lessons.length === 0"
+            title="Belum ada materi"
+            :description="auth.isTeacher ? 'Materi yang Anda buat akan muncul di sini.' : 'Belum ada materi yang terbit di kelas ini.'"
+            icon="book-open"
+        />
 
         <ul v-else class="space-y-2">
-            <li v-for="lesson in lessons" :key="lesson.id" class="rounded-lg border border-slate-200 bg-white p-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <RouterLink :to="`/courses/${route.params.courseId}/lessons/${lesson.id}`"
-                            class="font-semibold text-indigo-700 hover:underline">
-                            {{ lesson.title }}
-                        </RouterLink>
-                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                            <span class="rounded px-2 py-0.5 font-medium"
-                                :class="lesson.kind === 'remedial' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'">
-                                {{ lesson.kind === 'remedial' ? 'Remedial' : 'Reguler' }}
-                            </span>
-                            <span v-for="concept in lesson.concepts" :key="concept.id"
-                                class="rounded bg-indigo-50 px-2 py-0.5 text-indigo-800">
-                                {{ concept.name }}
-                            </span>
-                            <span v-if="auth.isTeacher" class="rounded px-2 py-0.5 font-medium"
-                                :class="lesson.is_published ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'">
-                                {{ lesson.is_published ? 'Terbit' : 'Draf' }}
-                            </span>
-                            <span v-if="!auth.isTeacher && lesson.completed"
-                                class="rounded bg-green-100 px-2 py-0.5 font-medium text-green-800">
-                                &#10003; Selesai
-                            </span>
+            <li v-for="lesson in lessons" :key="lesson.id">
+                <BaseCard>
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <RouterLink :to="`/courses/${route.params.courseId}/lessons/${lesson.id}`"
+                                class="font-semibold text-brand-700 hover:underline">
+                                {{ lesson.title }}
+                            </RouterLink>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <Badge :tone="lesson.kind === 'remedial' ? 'warning' : 'neutral'">
+                                    {{ lesson.kind === 'remedial' ? 'Remedial' : 'Reguler' }}
+                                </Badge>
+                                <Badge v-for="concept in lesson.concepts" :key="concept.id" tone="brand">{{ concept.name }}</Badge>
+                                <Badge v-if="auth.isTeacher" :tone="lesson.is_published ? 'success' : 'neutral'">
+                                    {{ lesson.is_published ? 'Terbit' : 'Draf' }}
+                                </Badge>
+                                <Badge v-if="!auth.isTeacher && lesson.completed" tone="success">
+                                    <BaseIcon name="check" size="sm" class="mr-1" />Selesai
+                                </Badge>
+                            </div>
+                        </div>
+                        <div v-if="auth.isTeacher" class="flex gap-2">
+                            <BaseButton variant="secondary" size="sm" :to="`/courses/${route.params.courseId}/lessons/${lesson.id}/edit`">
+                                <BaseIcon name="edit" size="sm" />Ubah
+                            </BaseButton>
+                            <BaseButton variant="danger-outline" size="sm" @click="deleting = lesson">
+                                <BaseIcon name="trash" size="sm" />Hapus
+                            </BaseButton>
                         </div>
                     </div>
-                    <RouterLink v-if="auth.isTeacher" :to="`/courses/${route.params.courseId}/lessons/${lesson.id}/edit`"
-                        class="ml-auto inline-flex min-h-10 items-center rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100">
-                        Ubah
-                    </RouterLink>
-                    <button v-if="auth.isTeacher" type="button"
-                        class="min-h-10 rounded-md border border-red-300 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
-                        @click="deleting = lesson">
-                        Hapus
-                    </button>
-                </div>
+                </BaseCard>
             </li>
         </ul>
 

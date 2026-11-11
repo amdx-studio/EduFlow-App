@@ -2,6 +2,11 @@
 import { onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
+import BaseButton from '../components/ui/BaseButton.vue';
+import DataTable from '../components/ui/DataTable.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage } from '../lib/errors';
 import { formatDateTime } from '../lib/format';
 
@@ -29,34 +34,44 @@ watch(() => route.params.courseId, load);
 
 <template>
     <div>
-        <p v-if="loading" class="text-slate-600">Memuat daftar siswa...</p>
+        <div v-if="loading" class="space-y-2" role="status" aria-busy="true">
+            <Skeleton class="h-10 w-full" />
+            <Skeleton class="h-10 w-full" />
+            <Skeleton class="h-10 w-full" />
+            <span class="sr-only">Memuat daftar siswa...</span>
+        </div>
 
-        <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <InlineAlert v-else-if="error" tone="danger" title="Daftar siswa tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
-        <div v-else-if="!students.length" class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-            Belum ada siswa. Bagikan kode gabung kelas kepada siswa.
-        </div>
+        <EmptyState
+            v-else-if="!students.length"
+            title="Belum ada siswa"
+            description="Bagikan kode gabung kelas kepada siswa."
+            icon="user"
+        />
 
-        <div v-else class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-            <table class="min-w-full text-left text-sm">
-                <thead class="bg-slate-50 text-slate-600">
-                    <tr>
-                        <th class="px-4 py-2 font-semibold">Nama</th>
-                        <th class="px-4 py-2 font-semibold">Email</th>
-                        <th class="px-4 py-2 font-semibold">Bergabung</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="s in students" :key="s.id" class="border-t border-slate-100">
-                        <td class="px-4 py-2"><RouterLink :to="`/courses/${route.params.courseId}/students/${s.id}`" class="text-indigo-700 hover:underline">{{ s.name }}</RouterLink></td>
-                        <td class="px-4 py-2">{{ s.email }}</td>
-                        <td class="px-4 py-2 whitespace-nowrap">{{ formatDateTime(s.enrolled_at) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <DataTable v-else label="Daftar siswa" caption="Siswa terdaftar di kelas ini">
+            <thead>
+                <tr>
+                    <th scope="col">Nama</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Bergabung</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="s in students" :key="s.id">
+                    <td>
+                        <RouterLink :to="`/courses/${route.params.courseId}/students/${s.id}`" class="font-medium text-brand-700 hover:underline">{{ s.name }}</RouterLink>
+                    </td>
+                    <td>{{ s.email }}</td>
+                    <td class="whitespace-nowrap">{{ formatDateTime(s.enrolled_at) }}</td>
+                </tr>
+            </tbody>
+        </DataTable>
     </div>
 </template>

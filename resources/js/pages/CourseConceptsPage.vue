@@ -3,6 +3,15 @@ import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import BaseInput from '../components/ui/BaseInput.vue';
+import BaseTextarea from '../components/ui/BaseTextarea.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import FormField from '../components/ui/FormField.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage, fieldErrors } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 
@@ -116,79 +125,77 @@ watch(() => route.params.courseId, load);
 
 <template>
     <section>
-        <form class="rounded-lg border border-slate-200 bg-white p-4" @submit.prevent="add">
-            <h2 class="font-semibold">Tambah konsep</h2>
-            <div class="mt-3">
-                <label for="concept-name" class="block text-sm font-medium">Nama konsep</label>
-                <input id="concept-name" v-model="form.name" type="text" maxlength="120" required
-                    class="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                <p v-if="formErrors.name" class="mt-1 text-sm text-red-700">{{ formErrors.name[0] }}</p>
-            </div>
-            <div class="mt-3">
-                <label for="concept-desc" class="block text-sm font-medium">Deskripsi (opsional)</label>
-                <textarea id="concept-desc" v-model="form.description" rows="2"
-                    class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"></textarea>
-                <p v-if="formErrors.description" class="mt-1 text-sm text-red-700">{{ formErrors.description[0] }}</p>
-            </div>
-            <button type="submit" :disabled="saving"
-                class="mt-3 min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                {{ saving ? 'Menyimpan...' : 'Tambah' }}
-            </button>
-        </form>
+        <BaseCard>
+            <form class="space-y-3" @submit.prevent="add">
+                <h2 class="font-semibold">Tambah konsep</h2>
+                <FormField label="Nama konsep" required :error="formErrors.name?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                    <BaseInput :id="id" v-model="form.name" maxlength="120" required
+                        :aria-describedby="describedby" :invalid="invalid" />
+                </FormField>
+                <FormField label="Deskripsi (opsional)" :error="formErrors.description?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                    <BaseTextarea :id="id" v-model="form.description" :rows="2"
+                        :aria-describedby="describedby" :invalid="invalid" />
+                </FormField>
+                <BaseButton type="submit" :loading="saving">
+                    <BaseIcon v-if="!saving" name="plus" size="sm" />{{ saving ? 'Menyimpan...' : 'Tambah' }}
+                </BaseButton>
+            </form>
+        </BaseCard>
 
-        <p v-if="loading" class="mt-4 text-slate-600">Memuat konsep...</p>
-
-        <div v-else-if="error" class="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-            {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
+        <div v-if="loading" class="mt-4 space-y-2" role="status" aria-busy="true">
+            <Skeleton class="h-16 w-full" />
+            <Skeleton class="h-16 w-full" />
+            <span class="sr-only">Memuat konsep...</span>
         </div>
 
-        <div v-else-if="concepts.length === 0"
-            class="mt-4 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-            Belum ada konsep. Tambahkan konsep pertama untuk mengelompokkan materi dan soal.
+        <InlineAlert v-else-if="error" class="mt-4" tone="danger" title="Konsep tidak dapat dimuat">
+            {{ error }}
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
+
+        <div v-else-if="concepts.length === 0" class="mt-4">
+            <EmptyState
+                title="Belum ada konsep"
+                description="Tambahkan konsep pertama untuk mengelompokkan materi dan soal."
+                icon="clipboard"
+            />
         </div>
 
         <ul v-else class="mt-4 space-y-2">
-            <li v-for="concept in concepts" :key="concept.id" class="rounded-lg border border-slate-200 bg-white p-4">
-                <form v-if="editingId === concept.id" @submit.prevent="saveEdit(concept)">
-                    <label :for="`edit-name-${concept.id}`" class="block text-sm font-medium">Nama konsep</label>
-                    <input :id="`edit-name-${concept.id}`" v-model="editForm.name" type="text" maxlength="120" required
-                        class="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                    <p v-if="editErrors.name" class="mt-1 text-sm text-red-700">{{ editErrors.name[0] }}</p>
-                    <label :for="`edit-desc-${concept.id}`" class="mt-3 block text-sm font-medium">Deskripsi</label>
-                    <textarea :id="`edit-desc-${concept.id}`" v-model="editForm.description" rows="2"
-                        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"></textarea>
-                    <div class="mt-3 flex gap-2">
-                        <button type="submit" :disabled="savingEdit"
-                            class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                            {{ savingEdit ? 'Menyimpan...' : 'Simpan' }}
-                        </button>
-                        <button type="button" :disabled="savingEdit"
-                            class="min-h-10 rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
-                            @click="cancelEdit">
-                            Batal
-                        </button>
-                    </div>
-                </form>
+            <li v-for="concept in concepts" :key="concept.id">
+                <BaseCard>
+                    <form v-if="editingId === concept.id" class="space-y-3" @submit.prevent="saveEdit(concept)">
+                        <FormField label="Nama konsep" required :error="editErrors.name?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                            <BaseInput :id="id" v-model="editForm.name" maxlength="120" required
+                                :aria-describedby="describedby" :invalid="invalid" />
+                        </FormField>
+                        <FormField label="Deskripsi" :error="editErrors.description?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                            <BaseTextarea :id="id" v-model="editForm.description" :rows="2"
+                                :aria-describedby="describedby" :invalid="invalid" />
+                        </FormField>
+                        <div class="flex gap-2">
+                            <BaseButton type="submit" :loading="savingEdit">{{ savingEdit ? 'Menyimpan...' : 'Simpan' }}</BaseButton>
+                            <BaseButton variant="secondary" :disabled="savingEdit" @click="cancelEdit">Batal</BaseButton>
+                        </div>
+                    </form>
 
-                <div v-else class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="font-semibold">{{ concept.name }}</p>
-                        <p v-if="concept.description" class="mt-1 text-sm text-slate-600">{{ concept.description }}</p>
+                    <div v-else class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="font-semibold">{{ concept.name }}</p>
+                            <p v-if="concept.description" class="mt-1 text-sm text-slate-600">{{ concept.description }}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <BaseButton variant="secondary" size="sm" @click="startEdit(concept)">
+                                <BaseIcon name="edit" size="sm" />Ubah
+                            </BaseButton>
+                            <BaseButton variant="danger-outline" size="sm" @click="deleting = concept">
+                                <BaseIcon name="trash" size="sm" />Hapus
+                            </BaseButton>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button type="button"
-                            class="min-h-10 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100"
-                            @click="startEdit(concept)">
-                            Ubah
-                        </button>
-                        <button type="button"
-                            class="min-h-10 rounded-md border border-red-300 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
-                            @click="deleting = concept">
-                            Hapus
-                        </button>
-                    </div>
-                </div>
+                </BaseCard>
             </li>
         </ul>
 
