@@ -1,5 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router';
+import Badge from './ui/Badge.vue';
+import BaseButton from './ui/BaseButton.vue';
 
 defineProps({
     item: { type: Object, required: true },
@@ -14,17 +16,13 @@ defineEmits(['complete']);
 </script>
 
 <template>
-    <div class="rounded-md border border-slate-200 p-4">
+    <div class="rounded-lg border border-slate-200 p-4">
         <div class="flex flex-wrap items-center gap-2">
             <span v-if="showConcept" class="font-medium">{{ item.concept }}</span>
-            <span class="rounded px-2 py-0.5 text-xs font-medium"
-                :class="item.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'">
+            <Badge :tone="item.status === 'completed' ? 'success' : 'neutral'">
                 {{ item.status === 'completed' ? 'Selesai' : 'Belum selesai' }}
-            </span>
-            <span v-if="item.source === 'teacher'"
-                class="rounded bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
-                Ditambahkan guru
-            </span>
+            </Badge>
+            <Badge v-if="item.source === 'teacher'" tone="brand">Ditambahkan guru</Badge>
         </div>
         <p v-if="percent !== null && percent !== undefined" class="mt-1 text-xs text-slate-600">
             Penguasaan saat rekomendasi: {{ Number(percent).toLocaleString('id-ID', { maximumFractionDigits: 2 }) }}%
@@ -34,15 +32,14 @@ defineEmits(['complete']);
         <p class="mt-2 text-sm">
             Materi:
             <RouterLink v-if="courseId" :to="`/courses/${courseId}/lessons/${item.lesson.id}`"
-                class="text-indigo-700 underline">
+                class="font-medium text-brand-700 underline">
                 {{ item.lesson.title }}
             </RouterLink>
             <span v-else class="font-medium">{{ item.lesson.title }}</span>
         </p>
-        <button v-if="canComplete && item.status !== 'completed'" type="button" :disabled="busy"
-            class="mt-3 min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+        <BaseButton v-if="canComplete && item.status !== 'completed'" class="mt-3" :loading="busy"
             @click="$emit('complete', item)">
             {{ busy ? 'Menyimpan...' : 'Tandai selesai' }}
-        </button>
+        </BaseButton>
     </div>
 </template>

@@ -8,9 +8,9 @@ const props = defineProps({
 });
 
 const FILL = {
-    mastered: 'bg-green-600',
-    developing: 'bg-amber-500',
-    not_mastered: 'bg-red-600',
+    mastered: 'bg-success-600',
+    developing: 'bg-warning-500',
+    not_mastered: 'bg-danger-600',
     insufficient: 'bg-slate-400',
 };
 

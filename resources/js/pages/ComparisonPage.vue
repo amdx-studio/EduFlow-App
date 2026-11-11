@@ -1,8 +1,13 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import http from '../api/http';
 import ComparisonTable from '../components/ComparisonTable.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage } from '../lib/errors';
 import { useAuthStore } from '../stores/auth';
 
@@ -51,45 +56,44 @@ watch(() => [route.params.quizId, route.query.student_id], load);
 
 <template>
     <section>
-        <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${route.params.quizId}`"
-            class="text-sm text-indigo-700 hover:underline">
-            &larr; Kembali ke kuis
-        </RouterLink>
+        <BaseButton variant="ghost" size="sm" :to="`/courses/${route.params.courseId}/quizzes/${route.params.quizId}`">
+            <BaseIcon name="arrow-left" size="sm" />Kembali ke kuis
+        </BaseButton>
 
-        <h1 class="mt-2 text-lg font-bold">Perbandingan sebelum dan sesudah</h1>
+        <h1 class="mt-2 text-2xl font-semibold">Perbandingan sebelum dan sesudah</h1>
 
-        <p v-if="loading" class="mt-3 text-slate-600">Memuat perbandingan...</p>
+        <div v-if="loading" class="mt-3 space-y-3" role="status" aria-busy="true">
+            <Skeleton class="h-40 w-full" />
+            <span class="sr-only">Memuat perbandingan...</span>
+        </div>
 
-        <div v-else-if="needsStudent" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-slate-600">
-            Pilih siswa untuk melihat perbandingannya. Buka perbandingan lewat halaman detail siswa (tab Siswa, pilih nama siswa);
+        <InlineAlert v-else-if="needsStudent" class="mt-3" tone="info" title="Pilih siswa terlebih dahulu">
+            Buka perbandingan lewat halaman detail siswa (tab Siswa, pilih nama siswa);
             atau tambahkan <code class="rounded bg-slate-100 px-1">?student_id=</code> dan nomor siswa pada alamat halaman ini.
+        </InlineAlert>
+
+        <div v-else-if="notFound" class="mt-3">
+            <EmptyState title="Perbandingan tidak ditemukan" icon="alert-triangle" />
         </div>
 
-        <div v-else-if="notFound" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p class="font-semibold">Perbandingan tidak ditemukan.</p>
-        </div>
-
-        <div v-else-if="error" class="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <InlineAlert v-else-if="error" class="mt-3" tone="danger" title="Perbandingan tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
         <div v-else-if="result" class="mt-3 space-y-4">
-            <div v-if="result.status === 'incomplete'"
-                class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-                Belum ada hasil asesmen ulang.
-            </div>
+            <EmptyState v-if="result.status === 'incomplete'" title="Belum ada hasil asesmen ulang" icon="clipboard" />
 
-            <div v-else class="rounded-lg border border-slate-200 bg-white p-5">
+            <template v-else>
                 <p v-if="result.concepts.length === 0" class="text-sm text-slate-600">
                     Tidak ada konsep yang dapat dibandingkan. Konsep dengan data kurang pada salah satu kuis dikecualikan.
                 </p>
                 <ComparisonTable v-else :concepts="result.concepts" />
-            </div>
+            </template>
 
-            <p class="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700" role="note">
-                {{ result.note || NOTE_FALLBACK }}
-            </p>
+            <InlineAlert tone="info">{{ result.note || NOTE_FALLBACK }}</InlineAlert>
         </div>
     </section>
 </template>
