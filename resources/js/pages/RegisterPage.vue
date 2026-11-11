@@ -5,6 +5,7 @@ import AuthShell from '../components/AuthShell.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseInput from '../components/ui/BaseInput.vue';
 import FormField from '../components/ui/FormField.vue';
+import RadioGroup from '../components/ui/RadioGroup.vue';
 import InlineAlert from '../components/ui/InlineAlert.vue';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
@@ -18,6 +19,10 @@ const form = reactive({ name: '', email: '', password: '', role: 'student', teac
 const errors = ref({});
 const message = ref('');
 const submitting = ref(false);
+const roleOptions = [
+    { value: 'student', label: 'Siswa' },
+    { value: 'teacher', label: 'Guru' },
+];
 
 async function submit() {
     submitting.value = true;
@@ -62,18 +67,7 @@ async function submit() {
                     :aria-describedby="describedby" :invalid="invalid" />
             </FormField>
 
-            <fieldset>
-                <legend class="block text-sm font-medium text-slate-900">Peran</legend>
-                <div class="mt-1 flex gap-6 text-sm">
-                    <label class="flex min-h-10 items-center gap-2">
-                        <input v-model="form.role" type="radio" value="student" class="h-4 w-4 accent-brand-600" /> Siswa
-                    </label>
-                    <label class="flex min-h-10 items-center gap-2">
-                        <input v-model="form.role" type="radio" value="teacher" class="h-4 w-4 accent-brand-600" /> Guru
-                    </label>
-                </div>
-                <p v-if="errors.role" class="mt-1 text-sm text-danger-700" role="alert">{{ errors.role[0] }}</p>
-            </fieldset>
+            <RadioGroup v-model="form.role" legend="Peran" :options="roleOptions" :error="errors.role?.[0] ?? ''" />
 
             <FormField v-if="form.role === 'teacher'" label="Kode guru" :error="errors.teacher_code?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
                 <BaseInput :id="id" v-model="form.teacher_code" autocomplete="off"

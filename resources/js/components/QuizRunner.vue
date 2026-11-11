@@ -5,6 +5,13 @@ import http from '../api/http';
 import { errorMessage } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 import ConfirmDialog from './ConfirmDialog.vue';
+import BaseButton from './ui/BaseButton.vue';
+import BaseCard from './ui/BaseCard.vue';
+import BaseIcon from './ui/BaseIcon.vue';
+import EmptyState from './ui/EmptyState.vue';
+import InlineAlert from './ui/InlineAlert.vue';
+import RadioGroup from './ui/RadioGroup.vue';
+import Skeleton from './ui/Skeleton.vue';
 
 const props = defineProps({
     attemptId: { type: [String, Number], required: true },
@@ -30,6 +37,7 @@ const submitting = ref(false);
 
 const question = computed(() => questions.value[current.value] ?? null);
 const unanswered = computed(() => questions.value.filter((q) => answers.value[q.id] == null).length);
+const options = computed(() => (question.value?.options ?? []).map((o) => ({ value: o.id, label: o.body })));
 
 const saveLabel = computed(() => ({
     idle: '',
@@ -128,84 +136,70 @@ onMounted(load);
 
 <template>
     <section>
-        <p v-if="loading" class="text-slate-600">Memuat kuis...</p>
-
-        <div v-else-if="notFound" class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p class="font-semibold">Percobaan tidak ditemukan.</p>
+        <div v-if="loading" class="space-y-3" role="status" aria-busy="true">
+            <Skeleton class="h-6 w-1/2" />
+            <Skeleton class="h-10 w-full" />
+            <Skeleton class="h-40 w-full" />
+            <span class="sr-only">Memuat kuis...</span>
         </div>
 
-        <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <EmptyState v-else-if="notFound" as="h1" title="Percobaan tidak ditemukan" icon="alert-triangle" />
+
+        <InlineAlert v-else-if="error" tone="danger" title="Kuis tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
         <div v-else-if="question" class="space-y-4">
             <div>
-                <h1 class="text-lg font-bold">{{ quiz.title }}</h1>
+                <h1 class="text-lg font-semibold">{{ quiz.title }}</h1>
                 <p class="text-sm text-slate-600">Percobaan ke-{{ attemptNo }}</p>
             </div>
 
             <nav class="flex flex-wrap gap-2" aria-label="Nomor soal">
-                <button v-for="(q, i) in questions" :key="q.id" type="button"
-                    class="min-h-10 min-w-10 rounded-md border px-3 py-2 text-sm"
-                    :class="i === current
-                        ? 'border-indigo-600 bg-indigo-600 font-semibold text-white'
-                        : 'border-slate-300 bg-white hover:bg-slate-100'"
+                <BaseButton v-for="(q, i) in questions" :key="q.id"
+                    :variant="i === current ? 'primary' : 'secondary'" size="sm" class="min-w-10"
                     :aria-current="i === current ? 'step' : undefined"
                     :aria-label="`Soal ${i + 1}, ${answers[q.id] != null ? 'sudah dijawab' : 'belum dijawab'}`"
                     @click="current = i">
-                    {{ i + 1 }}<span v-if="answers[q.id] != null" aria-hidden="true"> &#10003;</span>
-                </button>
+                    {{ i + 1 }}<BaseIcon v-if="answers[q.id] != null" name="check" size="sm" />
+                </BaseButton>
             </nav>
 
-            <article class="rounded-lg border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500">Soal {{ current + 1 }} dari {{ questions.length }} &middot; {{ question.points }} poin</p>
-                <p class="mt-2 whitespace-pre-line font-medium">{{ question.body }}</p>
+            <BaseCard>
+                <article>
+                    <p class="text-xs text-slate-500">Soal {{ current + 1 }} dari {{ questions.length }} &middot; {{ question.points }} poin</p>
+                    <p class="mt-2 whitespace-pre-line font-medium">{{ question.body }}</p>
 
-                <fieldset class="mt-4">
-                    <legend class="sr-only">Pilihan jawaban</legend>
-                    <div class="space-y-2">
-                        <label v-for="option in question.options" :key="option.id"
-                            class="flex min-h-10 cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm"
-                            :class="answers[question.id] === option.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300 hover:bg-slate-50'">
-                            <input type="radio" :name="`question-${question.id}`" :value="option.id"
-                                :checked="answers[question.id] === option.id" :disabled="saving"
-                                @change="choose(option.id)" />
-                            <span>{{ option.body }}</span>
-                        </label>
+                    <div class="mt-4">
+                        <RadioGroup :key="question.id" legend="Pilihan jawaban" legend-hidden variant="card"
+                            :disabled="saving" :options="options" :model-value="answers[question.id] ?? null"
+                            @update:model-value="choose" />
                     </div>
-                </fieldset>
 
-                <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <button type="button" :disabled="saving || answers[question.id] == null"
-                        class="text-sm text-slate-600 underline disabled:opacity-40"
-                        @click="clearAnswer">
-                        Kosongkan jawaban
-                    </button>
-                    <p class="text-sm" :class="saveState === 'error' ? 'text-red-700' : 'text-slate-600'" role="status" aria-live="polite">
-                        {{ saveLabel }}
-                    </p>
-                </div>
-            </article>
+                    <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <BaseButton variant="ghost" size="sm" :disabled="saving || answers[question.id] == null" @click="clearAnswer">
+                            Kosongkan jawaban
+                        </BaseButton>
+                        <p class="text-sm" :class="saveState === 'error' ? 'text-danger-700' : 'text-slate-600'" role="status" aria-live="polite">
+                            {{ saveLabel }}
+                        </p>
+                    </div>
+                </article>
+            </BaseCard>
 
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex gap-2">
-                    <button type="button" :disabled="current === 0"
-                        class="min-h-10 rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-40"
-                        @click="current--">
-                        Sebelumnya
-                    </button>
-                    <button type="button" :disabled="current === questions.length - 1"
-                        class="min-h-10 rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-40"
-                        @click="current++">
-                        Berikutnya
-                    </button>
+                    <BaseButton variant="secondary" :disabled="current === 0" @click="current--">
+                        <BaseIcon name="chevron-left" size="sm" />Sebelumnya
+                    </BaseButton>
+                    <BaseButton variant="secondary" :disabled="current === questions.length - 1" @click="current++">
+                        Berikutnya<BaseIcon name="chevron-right" size="sm" />
+                    </BaseButton>
                 </div>
-                <button type="button" :disabled="saving || submitting"
-                    class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                    @click="confirming = true">
-                    Kirim
-                </button>
+                <BaseButton :disabled="saving || submitting" @click="confirming = true">Kirim</BaseButton>
             </div>
         </div>
 
@@ -214,6 +208,7 @@ onMounted(load);
             title="Kirim kuis?"
             :message="(unanswered > 0 ? `Masih ada ${unanswered} soal yang belum dijawab. ` : 'Semua soal sudah dijawab. ') + 'Kuis yang sudah dikirim tidak dapat diubah.'"
             confirm-label="Ya, kirim"
+            variant="primary"
             :busy="submitting"
             @confirm="submit"
             @cancel="confirming = false" />

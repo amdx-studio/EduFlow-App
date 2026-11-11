@@ -1,6 +1,13 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import BaseButton from './ui/BaseButton.vue';
+import BaseIcon from './ui/BaseIcon.vue';
+import BaseInput from './ui/BaseInput.vue';
+import BaseRadio from './ui/BaseRadio.vue';
+import BaseSelect from './ui/BaseSelect.vue';
+import BaseTextarea from './ui/BaseTextarea.vue';
+import FormField from './ui/FormField.vue';
 
 const props = defineProps({
     concepts: { type: Array, default: () => [] },
@@ -45,6 +52,8 @@ watch(() => props.question, (q) => {
     form.value = q ? fromQuestion(q) : blank();
 });
 
+const correctIndex = computed(() => form.value.options.findIndex((o) => o.is_correct));
+
 const optionErrors = computed(() => {
     const messages = Object.entries(props.errors)
         .filter(([key]) => key.startsWith('options'))
@@ -88,85 +97,67 @@ function submit() {
 </script>
 
 <template>
-    <form class="space-y-4 rounded-lg border border-indigo-200 bg-indigo-50/40 p-4" @submit.prevent="submit">
+    <form class="space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4" @submit.prevent="submit">
         <h3 class="font-semibold">{{ question ? 'Ubah soal' : 'Tambah soal' }}</h3>
 
-        <div>
-            <label for="qe-body" class="block text-sm font-medium">Teks soal</label>
-            <textarea id="qe-body" v-model="form.body" rows="3" required
-                class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"></textarea>
-            <p v-if="errors.body" class="mt-1 text-sm text-red-700">{{ errors.body[0] }}</p>
-        </div>
+        <FormField label="Teks soal" required :error="errors.body?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+            <BaseTextarea :id="id" v-model="form.body" :rows="3" required
+                :aria-describedby="describedby" :invalid="invalid" />
+        </FormField>
 
         <div class="flex flex-wrap gap-4">
-            <div class="min-w-48 flex-1">
-                <label for="qe-concept" class="block text-sm font-medium">Konsep</label>
-                <select id="qe-concept" v-model="form.concept_id" required
-                    class="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2">
+            <FormField class="min-w-48 flex-1" label="Konsep" required :error="errors.concept_id?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <BaseSelect :id="id" v-model="form.concept_id" required
+                    :aria-describedby="describedby" :invalid="invalid">
                     <option value="" disabled>Pilih konsep</option>
                     <option v-for="concept in concepts" :key="concept.id" :value="concept.id">{{ concept.name }}</option>
-                </select>
+                </BaseSelect>
                 <p v-if="concepts.length === 0" class="mt-1 text-sm text-slate-600">
                     Belum ada konsep.
-                    <RouterLink :to="`/courses/${route.params.courseId}/concepts`" class="text-indigo-700 underline">Buat konsep</RouterLink>
+                    <RouterLink :to="`/courses/${route.params.courseId}/concepts`" class="font-medium text-brand-700 underline">Buat konsep</RouterLink>
                 </p>
-                <p v-if="errors.concept_id" class="mt-1 text-sm text-red-700">{{ errors.concept_id[0] }}</p>
-            </div>
-            <div>
-                <label for="qe-points" class="block text-sm font-medium">Poin</label>
-                <input id="qe-points" v-model.number="form.points" type="number" min="1" max="65535" required
-                    class="mt-1 min-h-10 w-24 rounded-md border border-slate-300 bg-white px-3 py-2" />
-                <p v-if="errors.points" class="mt-1 text-sm text-red-700">{{ errors.points[0] }}</p>
-            </div>
-            <div>
-                <label for="qe-position" class="block text-sm font-medium">Urutan</label>
-                <input id="qe-position" v-model.number="form.position" type="number" min="0"
-                    class="mt-1 min-h-10 w-24 rounded-md border border-slate-300 bg-white px-3 py-2" />
-                <p class="mt-1 max-w-48 text-xs text-slate-600">Angka kecil tampil lebih dulu. Kosongkan untuk menaruh di akhir.</p>
-                <p v-if="errors.position" class="mt-1 text-sm text-red-700">{{ errors.position[0] }}</p>
-            </div>
+            </FormField>
+            <FormField label="Poin" required :error="errors.points?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <div class="w-24">
+                    <BaseInput :id="id" v-model="form.points" type="number" min="1" max="65535" required
+                        :aria-describedby="describedby" :invalid="invalid" />
+                </div>
+            </FormField>
+            <FormField class="max-w-48" label="Urutan" hint="Angka kecil tampil lebih dulu. Kosongkan untuk menaruh di akhir." :error="errors.position?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                <div class="w-24">
+                    <BaseInput :id="id" v-model="form.position" type="number" min="0"
+                        :aria-describedby="describedby" :invalid="invalid" />
+                </div>
+            </FormField>
         </div>
 
         <fieldset>
-            <legend class="block text-sm font-medium">Opsi jawaban (pilih satu yang benar)</legend>
+            <legend class="block text-sm font-medium text-slate-900">Opsi jawaban (pilih satu yang benar)</legend>
             <div class="mt-2 space-y-2">
                 <div v-for="(option, i) in form.options" :key="i" class="flex items-center gap-2">
-                    <input type="radio" name="qe-correct" :checked="option.is_correct"
-                        :aria-label="`Opsi ${i + 1} benar`" @change="setCorrect(i)" />
-                    <input v-model="option.body" type="text" required :aria-label="`Teks opsi ${i + 1}`"
-                        class="min-h-10 min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2" />
-                    <button type="button" :disabled="form.options.length <= 2"
-                        class="min-h-10 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100 disabled:opacity-40"
+                    <BaseRadio :model-value="correctIndex" :value="i" name="qe-correct"
+                        :aria-label="`Opsi ${i + 1} benar`" @update:model-value="setCorrect" />
+                    <BaseInput v-model="option.body" required :aria-label="`Teks opsi ${i + 1}`" class="min-w-0 flex-1" />
+                    <BaseButton variant="secondary" size="sm" :disabled="form.options.length <= 2"
                         :aria-label="`Hapus opsi ${i + 1}`" @click="removeOption(i)">
-                        &times;
-                    </button>
+                        <BaseIcon name="x" size="sm" />
+                    </BaseButton>
                 </div>
             </div>
-            <button type="button" :disabled="form.options.length >= 6"
-                class="mt-2 min-h-10 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100 disabled:opacity-40"
-                @click="addOption">
-                Tambah opsi
-            </button>
-            <p v-for="message in optionErrors" :key="message" class="mt-1 text-sm text-red-700">{{ message }}</p>
+            <BaseButton class="mt-2" variant="secondary" size="sm" :disabled="form.options.length >= 6" @click="addOption">
+                <BaseIcon name="plus" size="sm" />Tambah opsi
+            </BaseButton>
+            <p v-for="message in optionErrors" :key="message" class="mt-1 text-sm text-danger-700" role="alert">{{ message }}</p>
         </fieldset>
 
-        <div>
-            <label for="qe-explanation" class="block text-sm font-medium">Penjelasan (opsional)</label>
-            <textarea id="qe-explanation" v-model="form.explanation" rows="2"
-                class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"></textarea>
-            <p v-if="errors.explanation" class="mt-1 text-sm text-red-700">{{ errors.explanation[0] }}</p>
-        </div>
+        <FormField label="Penjelasan (opsional)" :error="errors.explanation?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+            <BaseTextarea :id="id" v-model="form.explanation" :rows="2"
+                :aria-describedby="describedby" :invalid="invalid" />
+        </FormField>
 
         <div class="flex gap-2">
-            <button type="submit" :disabled="busy"
-                class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                {{ busy ? 'Menyimpan...' : 'Simpan soal' }}
-            </button>
-            <button type="button" :disabled="busy"
-                class="min-h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-100"
-                @click="emit('cancel')">
-                Batal
-            </button>
+            <BaseButton type="submit" :loading="busy">{{ busy ? 'Menyimpan...' : 'Simpan soal' }}</BaseButton>
+            <BaseButton variant="secondary" :disabled="busy" @click="emit('cancel')">Batal</BaseButton>
         </div>
     </form>
 </template>

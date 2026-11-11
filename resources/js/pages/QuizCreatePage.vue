@@ -8,6 +8,7 @@ import BaseIcon from '../components/ui/BaseIcon.vue';
 import BaseInput from '../components/ui/BaseInput.vue';
 import BaseSelect from '../components/ui/BaseSelect.vue';
 import FormField from '../components/ui/FormField.vue';
+import RadioGroup from '../components/ui/RadioGroup.vue';
 import { errorMessage, fieldErrors } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 
@@ -20,6 +21,10 @@ const courseId = route.params.courseId;
 const form = ref({ title: '', kind: 'assessment', base_quiz_id: '', max_attempts: 1 });
 const errors = ref({});
 const saving = ref(false);
+const kindOptions = [
+    { value: 'assessment', label: 'Asesmen' },
+    { value: 'reassessment', label: 'Asesmen ulang' },
+];
 
 const baseOptions = ref([]);
 const loadingBases = ref(true);
@@ -85,20 +90,7 @@ onMounted(loadBases);
                         :aria-describedby="describedby" :invalid="invalid" />
                 </FormField>
 
-                <fieldset>
-                    <legend class="block text-sm font-medium text-slate-900">Jenis kuis</legend>
-                    <div class="mt-1 flex flex-wrap gap-4 text-sm">
-                        <label class="inline-flex min-h-10 items-center gap-2">
-                            <input v-model="form.kind" type="radio" value="assessment" class="h-4 w-4 accent-brand-600" />
-                            Asesmen
-                        </label>
-                        <label class="inline-flex min-h-10 items-center gap-2">
-                            <input v-model="form.kind" type="radio" value="reassessment" class="h-4 w-4 accent-brand-600" />
-                            Asesmen ulang
-                        </label>
-                    </div>
-                    <p v-if="errors.kind" class="mt-1 text-sm text-danger-700" role="alert">{{ errors.kind[0] }}</p>
-                </fieldset>
+                <RadioGroup v-model="form.kind" legend="Jenis kuis" :options="kindOptions" :error="errors.kind?.[0] ?? ''" />
 
                 <FormField v-if="isReassessment" label="Kuis dasar" :error="errors.base_quiz_id?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
                     <BaseSelect :id="id" v-model="form.base_quiz_id" :disabled="loadingBases"

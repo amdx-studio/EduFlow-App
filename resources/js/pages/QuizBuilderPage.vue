@@ -1,10 +1,19 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import PublishPanel from '../components/PublishPanel.vue';
 import QuestionEditor from '../components/QuestionEditor.vue';
+import Badge from '../components/ui/Badge.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import BaseInput from '../components/ui/BaseInput.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import FormField from '../components/ui/FormField.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage, fieldErrors } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 
@@ -191,78 +200,81 @@ onMounted(() => load());
 
 <template>
     <section>
-        <RouterLink :to="`/courses/${courseId}/quizzes`" class="text-sm text-indigo-700 hover:underline">
-            &larr; Daftar kuis
-        </RouterLink>
+        <BaseButton variant="ghost" size="sm" :to="`/courses/${courseId}/quizzes`">
+            <BaseIcon name="arrow-left" size="sm" />Daftar kuis
+        </BaseButton>
 
-        <p v-if="loading" class="mt-3 text-slate-600">Memuat kuis...</p>
-
-        <div v-else-if="notFound" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p class="font-semibold">Kuis tidak ditemukan.</p>
+        <div v-if="loading" class="mt-3 space-y-3" role="status" aria-busy="true">
+            <Skeleton class="h-7 w-1/2" />
+            <Skeleton class="h-24 w-full" />
+            <Skeleton class="h-32 w-full" />
+            <span class="sr-only">Memuat kuis...</span>
         </div>
 
-        <div v-else-if="error" class="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <div v-else-if="notFound" class="mt-3">
+            <EmptyState title="Kuis tidak ditemukan" icon="alert-triangle" />
+        </div>
+
+        <InlineAlert v-else-if="error" class="mt-3" tone="danger" title="Kuis tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load()">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load()">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
         <div v-else-if="quiz" class="mt-3 space-y-4">
             <div class="flex flex-wrap items-center gap-2">
-                <h2 class="text-lg font-bold">{{ quiz.title }}</h2>
-                <span v-if="quiz.kind === 'reassessment'"
-                    class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">Asesmen ulang</span>
+                <h2 class="text-lg font-semibold">{{ quiz.title }}</h2>
+                <Badge v-if="quiz.kind === 'reassessment'">Asesmen ulang</Badge>
                 <span v-if="quiz.kind === 'reassessment'" class="text-sm text-slate-600">
                     Kuis dasar: {{ baseQuiz?.title ?? `#${quiz.base_quiz_id}` }}
                 </span>
-                <span class="rounded px-2 py-0.5 text-xs font-medium"
-                    :class="isDraft ? 'bg-slate-200 text-slate-700' : 'bg-green-100 text-green-800'">
-                    {{ isDraft ? 'Draf' : 'Terbit' }}
-                </span>
+                <Badge :tone="isDraft ? 'neutral' : 'success'">{{ isDraft ? 'Draf' : 'Terbit' }}</Badge>
             </div>
 
             <PublishPanel :quiz="quiz" :publishing="publishing" :reverting="reverting"
                 :error-messages="publishErrors" :warnings="warnings"
                 @publish="publish" @revert="revert" />
 
-            <form class="rounded-lg border border-slate-200 bg-white p-4" @submit.prevent="saveSettings">
-                <h3 class="font-semibold">Pengaturan kuis</h3>
-                <div class="mt-3 flex flex-wrap items-end gap-4">
-                    <div class="min-w-48 flex-1">
-                        <label for="quiz-title" class="block text-sm font-medium">Judul</label>
-                        <input id="quiz-title" v-model="settings.title" type="text" maxlength="150" required
-                            class="mt-1 min-h-10 w-full rounded-md border border-slate-300 px-3 py-2" />
-                        <p v-if="settingsErrors.title" class="mt-1 text-sm text-red-700">{{ settingsErrors.title[0] }}</p>
+            <BaseCard>
+                <form @submit.prevent="saveSettings">
+                    <h3 class="font-semibold">Pengaturan kuis</h3>
+                    <div class="mt-3 flex flex-wrap items-end gap-4">
+                        <FormField class="min-w-48 flex-1" label="Judul" required :error="settingsErrors.title?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                            <BaseInput :id="id" v-model="settings.title" maxlength="150" required
+                                :aria-describedby="describedby" :invalid="invalid" />
+                        </FormField>
+                        <FormField label="Percobaan maksimal" required :error="settingsErrors.max_attempts?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                            <div class="w-28">
+                                <BaseInput :id="id" v-model="settings.max_attempts" type="number" min="1" max="65535" required
+                                    :aria-describedby="describedby" :invalid="invalid" />
+                            </div>
+                        </FormField>
+                        <BaseButton type="submit" variant="secondary" :loading="savingSettings">
+                            {{ savingSettings ? 'Menyimpan...' : 'Simpan pengaturan' }}
+                        </BaseButton>
                     </div>
-                    <div>
-                        <label for="quiz-attempts" class="block text-sm font-medium">Percobaan maksimal</label>
-                        <input id="quiz-attempts" v-model.number="settings.max_attempts" type="number" min="1" max="65535" required
-                            class="mt-1 min-h-10 w-28 rounded-md border border-slate-300 px-3 py-2" />
-                        <p v-if="settingsErrors.max_attempts" class="mt-1 text-sm text-red-700">{{ settingsErrors.max_attempts[0] }}</p>
-                    </div>
-                    <button type="submit" :disabled="savingSettings"
-                        class="min-h-10 rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-50">
-                        {{ savingSettings ? 'Menyimpan...' : 'Simpan pengaturan' }}
-                    </button>
-                </div>
-            </form>
+                </form>
+            </BaseCard>
 
             <div>
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <h3 class="font-semibold">Soal ({{ quiz.questions.length }})</h3>
-                    <button v-if="isDraft && editing === null" type="button"
-                        class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                        @click="startEdit('new')">
-                        Tambah soal
-                    </button>
+                    <BaseButton v-if="isDraft && editing === null" @click="startEdit('new')">
+                        <BaseIcon name="plus" size="sm" />Tambah soal
+                    </BaseButton>
                 </div>
                 <p v-if="!isDraft" class="mt-1 text-sm text-slate-600">
                     Soal tidak dapat diubah saat kuis terbit. Kembalikan ke draf untuk menyunting.
                 </p>
 
-                <div v-if="quiz.questions.length === 0 && editing !== 'new'"
-                    class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-                    Belum ada soal. Tambahkan soal pertama dan tautkan ke sebuah konsep.
-                </div>
+                <EmptyState
+                    v-if="quiz.questions.length === 0 && editing !== 'new'"
+                    class="mt-3"
+                    title="Belum ada soal"
+                    description="Tambahkan soal pertama dan tautkan ke sebuah konsep."
+                    icon="clipboard"
+                />
 
                 <ol class="mt-3 space-y-3">
                     <li v-for="(question, index) in quiz.questions" :key="question.id">
@@ -270,40 +282,38 @@ onMounted(() => load());
                             :errors="editorErrors" :busy="savingQuestion"
                             @save="saveQuestion" @cancel="cancelEdit" />
 
-                        <div v-else class="rounded-lg border border-slate-200 bg-white p-4">
+                        <BaseCard v-else>
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <p class="text-xs text-slate-500">Soal {{ index + 1 }} &middot; nilai urutan {{ question.position }}</p>
                                     <p class="mt-1 whitespace-pre-line font-medium">{{ question.body }}</p>
-                                    <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                                        <span class="rounded bg-indigo-50 px-2 py-0.5 text-indigo-800">{{ question.concept?.name }}</span>
-                                        <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{{ question.points }} poin</span>
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <Badge tone="brand">{{ question.concept?.name }}</Badge>
+                                        <Badge>{{ question.points }} poin</Badge>
                                     </div>
                                 </div>
                                 <div v-if="isDraft" class="flex gap-2">
-                                    <button type="button" :disabled="editing !== null"
-                                        class="min-h-10 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100 disabled:opacity-50"
-                                        @click="startEdit(question.id)">
-                                        Ubah
-                                    </button>
-                                    <button type="button" :disabled="editing !== null"
-                                        class="min-h-10 rounded-md border border-red-300 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
-                                        @click="deleting = question">
-                                        Hapus
-                                    </button>
+                                    <BaseButton variant="secondary" size="sm" :disabled="editing !== null" @click="startEdit(question.id)">
+                                        <BaseIcon name="edit" size="sm" />Ubah
+                                    </BaseButton>
+                                    <BaseButton variant="danger-outline" size="sm" :disabled="editing !== null" @click="deleting = question">
+                                        <BaseIcon name="trash" size="sm" />Hapus
+                                    </BaseButton>
                                 </div>
                             </div>
                             <ul class="mt-3 space-y-1 text-sm">
                                 <li v-for="(option, i) in question.options" :key="option.id"
-                                    :class="option.is_correct ? 'font-semibold text-green-800' : 'text-slate-700'">
+                                    :class="option.is_correct ? 'font-semibold text-success-800' : 'text-slate-700'">
                                     {{ letter(i) }}. {{ option.body }}
-                                    <span v-if="option.is_correct"> &#10003; benar</span>
+                                    <span v-if="option.is_correct" class="ml-1 inline-flex items-center gap-0.5 align-middle">
+                                        <BaseIcon name="check" size="sm" />benar
+                                    </span>
                                 </li>
                             </ul>
                             <p v-if="question.explanation" class="mt-2 text-sm text-slate-600">
                                 Penjelasan: {{ question.explanation }}
                             </p>
-                        </div>
+                        </BaseCard>
                     </li>
                 </ol>
 

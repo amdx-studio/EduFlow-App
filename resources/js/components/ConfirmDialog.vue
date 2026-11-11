@@ -7,6 +7,7 @@ defineProps({
     title: { type: String, default: 'Konfirmasi' },
     message: { type: String, default: '' },
     confirmLabel: { type: String, default: 'Ya, lanjutkan' },
+    variant: { type: String, default: 'danger' },
     busy: { type: Boolean, default: false },
 });
 const emit = defineEmits(['confirm', 'cancel']);
@@ -23,7 +24,7 @@ const emit = defineEmits(['confirm', 'cancel']);
         <p class="text-sm text-slate-600">{{ message }}</p>
         <template #footer>
             <BaseButton variant="secondary" :disabled="busy" data-autofocus @click="emit('cancel')">Batal</BaseButton>
-            <BaseButton variant="danger" :loading="busy" @click="emit('confirm')">
+            <BaseButton :variant="variant" :loading="busy" @click="emit('confirm')">
                 {{ busy ? 'Memproses...' : confirmLabel }}
             </BaseButton>
         </template>

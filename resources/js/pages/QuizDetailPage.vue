@@ -2,6 +2,14 @@
 import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import http from '../api/http';
+import Badge from '../components/ui/Badge.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import DataTable from '../components/ui/DataTable.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 
@@ -74,46 +82,49 @@ onMounted(load);
 
 <template>
     <section>
-        <RouterLink :to="`/courses/${courseId}/quizzes`" class="text-sm text-indigo-700 hover:underline">
-            &larr; Daftar kuis
-        </RouterLink>
+        <BaseButton variant="ghost" size="sm" :to="`/courses/${courseId}/quizzes`">
+            <BaseIcon name="arrow-left" size="sm" />Daftar kuis
+        </BaseButton>
 
-        <p v-if="loading" class="mt-3 text-slate-600">Memuat kuis...</p>
-
-        <div v-else-if="notFound" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p class="font-semibold">Kuis tidak ditemukan.</p>
+        <div v-if="loading" class="mt-3 space-y-3" role="status" aria-busy="true">
+            <Skeleton class="h-28 w-full" />
+            <Skeleton class="h-32 w-full" />
+            <span class="sr-only">Memuat kuis...</span>
         </div>
 
-        <div v-else-if="error" class="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <div v-else-if="notFound" class="mt-3">
+            <EmptyState title="Kuis tidak ditemukan" icon="alert-triangle" />
+        </div>
+
+        <InlineAlert v-else-if="error" class="mt-3" tone="danger" title="Kuis tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
         <div v-else-if="quiz" class="mt-3 space-y-4">
-            <div class="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="text-lg font-bold">{{ quiz.title }}</h2>
+            <BaseCard>
+                <h2 class="text-lg font-semibold">{{ quiz.title }}</h2>
                 <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                    <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ kindLabel(quiz.kind) }}</span>
+                    <Badge>{{ kindLabel(quiz.kind) }}</Badge>
                     <span>Percobaan terpakai: {{ quiz.attempts_used }} dari {{ quiz.max_attempts }}</span>
                     <RouterLink v-if="quiz.kind === 'reassessment'" :to="`/courses/${courseId}/quizzes/${quizId}/comparison`"
-                        class="text-indigo-700 underline">
+                        class="font-medium text-brand-700 underline">
                         Lihat perbandingan
                     </RouterLink>
                 </div>
 
                 <div v-if="quiz.gate.status === 'available'" class="mt-4">
-                    <button type="button" :disabled="starting"
-                        class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                        @click="start">
+                    <BaseButton :loading="starting" @click="start">
                         {{ starting ? 'Memuat...' : (activeAttempt ? 'Lanjutkan kuis' : 'Mulai kuis') }}
-                    </button>
+                    </BaseButton>
                     <p v-if="activeAttempt" class="mt-2 text-sm text-slate-600">
                         Anda memiliki percobaan ke-{{ activeAttempt.attempt_no }} yang belum dikirim.
                     </p>
                 </div>
 
-                <div v-else class="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
-                    <p class="font-semibold">Kuis terkunci</p>
+                <InlineAlert v-else class="mt-4" tone="warning" title="Kuis terkunci">
                     <p>{{ quiz.gate.reason }}</p>
                     <ul v-if="quiz.gate.pending?.length" class="mt-2 list-disc space-y-1 pl-5">
                         <li v-for="item in quiz.gate.pending" :key="item.id">
@@ -121,39 +132,39 @@ onMounted(load);
                         </li>
                     </ul>
                     <RouterLink v-if="quiz.gate.pending?.length" :to="`/courses/${courseId}/remediation`"
-                        class="mt-2 inline-block text-indigo-700 underline">
+                        class="mt-2 inline-block font-medium text-brand-700 underline">
                         Buka Remedial Saya
                     </RouterLink>
-                </div>
-            </div>
+                </InlineAlert>
+            </BaseCard>
 
-            <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <div>
                 <h3 class="font-semibold">Riwayat percobaan</h3>
                 <p v-if="quiz.attempts.length === 0" class="mt-2 text-sm text-slate-600">Belum ada percobaan.</p>
-                <div v-else class="mt-2 overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                <div v-else class="mt-2">
+                    <DataTable label="Riwayat percobaan" caption="Riwayat percobaan kuis ini">
                         <thead>
-                            <tr class="border-b border-slate-200 text-slate-600">
-                                <th class="py-2 pr-4 font-medium">Percobaan</th>
-                                <th class="py-2 pr-4 font-medium">Status</th>
-                                <th class="py-2 pr-4 font-medium">Skor</th>
-                                <th class="py-2 pr-4 font-medium">Waktu kirim</th>
-                                <th class="py-2 font-medium">Hasil</th>
+                            <tr>
+                                <th scope="col">Percobaan</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Skor</th>
+                                <th scope="col">Waktu kirim</th>
+                                <th scope="col">Hasil</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="attempt in quiz.attempts" :key="attempt.id" class="border-b border-slate-100">
-                                <td class="py-2 pr-4">Ke-{{ attempt.attempt_no }}</td>
-                                <td class="py-2 pr-4">{{ attempt.status === 'submitted' ? 'Terkirim' : 'Sedang dikerjakan' }}</td>
-                                <td class="py-2 pr-4">{{ formatScore(attempt.score_percent) }}</td>
-                                <td class="py-2 pr-4">{{ formatTime(attempt.submitted_at) }}</td>
-                                <td class="py-2">
+                            <tr v-for="attempt in quiz.attempts" :key="attempt.id">
+                                <td class="whitespace-nowrap">Ke-{{ attempt.attempt_no }}</td>
+                                <td class="whitespace-nowrap">{{ attempt.status === 'submitted' ? 'Terkirim' : 'Sedang dikerjakan' }}</td>
+                                <td class="tabular-nums">{{ formatScore(attempt.score_percent) }}</td>
+                                <td class="whitespace-nowrap">{{ formatTime(attempt.submitted_at) }}</td>
+                                <td>
                                     <RouterLink v-if="attempt.status === 'submitted'" :to="`/attempts/${attempt.id}/result`"
-                                        class="text-indigo-700 underline">Lihat hasil</RouterLink>
+                                        class="font-medium text-brand-700 underline">Lihat hasil</RouterLink>
                                 </td>
                             </tr>
                         </tbody>
-                    </table>
+                    </DataTable>
                 </div>
             </div>
         </div>
