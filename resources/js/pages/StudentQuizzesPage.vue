@@ -2,6 +2,12 @@
 import { onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
+import Badge from '../components/ui/Badge.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage } from '../lib/errors';
 
 const route = useRoute();
@@ -33,37 +39,46 @@ watch(() => route.params.courseId, load);
 
 <template>
     <section>
-        <p v-if="loading" class="text-slate-600">Memuat kuis...</p>
+        <div v-if="loading" class="space-y-2" role="status" aria-busy="true">
+            <Skeleton class="h-20 w-full" />
+            <Skeleton class="h-20 w-full" />
+            <span class="sr-only">Memuat kuis...</span>
+        </div>
 
-        <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <InlineAlert v-else-if="error" tone="danger" title="Kuis tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
-        <div v-else-if="quizzes.length === 0"
-            class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-            Belum ada kuis yang terbit di kelas ini.
-        </div>
+        <EmptyState
+            v-else-if="quizzes.length === 0"
+            title="Belum ada kuis"
+            description="Belum ada kuis yang terbit di kelas ini."
+            icon="clipboard"
+        />
 
         <ul v-else class="space-y-2">
-            <li v-for="quiz in quizzes" :key="quiz.id" class="rounded-lg border border-slate-200 bg-white p-4">
-                <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
-                    class="font-semibold text-indigo-700 hover:underline">
-                    {{ quiz.title }}
-                </RouterLink>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                    <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{{ kindLabel(quiz.kind) }}</span>
-                    <span class="text-slate-600">{{ quiz.attempts_used }} dari {{ quiz.max_attempts }} percobaan</span>
-                    <span class="rounded px-2 py-0.5 font-medium"
-                        :class="quiz.gate.status === 'available' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-900'">
-                        {{ quiz.gate.status === 'available' ? 'Tersedia' : 'Terkunci' }}
-                    </span>
-                    <span v-if="quiz.gate.status === 'locked'" class="text-slate-600">{{ quiz.gate.reason }}</span>
-                    <RouterLink v-if="quiz.gate.pending?.length" :to="`/courses/${route.params.courseId}/remediation`"
-                        class="text-indigo-700 underline">
-                        {{ quiz.gate.pending.length }} remedial belum selesai
+            <li v-for="quiz in quizzes" :key="quiz.id">
+                <BaseCard>
+                    <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
+                        class="font-semibold text-brand-700 hover:underline">
+                        {{ quiz.title }}
                     </RouterLink>
-                </div>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge>{{ kindLabel(quiz.kind) }}</Badge>
+                        <span class="text-xs text-slate-600">{{ quiz.attempts_used }} dari {{ quiz.max_attempts }} percobaan</span>
+                        <Badge :tone="quiz.gate.status === 'available' ? 'success' : 'warning'">
+                            {{ quiz.gate.status === 'available' ? 'Tersedia' : 'Terkunci' }}
+                        </Badge>
+                        <span v-if="quiz.gate.status === 'locked'" class="text-xs text-slate-600">{{ quiz.gate.reason }}</span>
+                        <RouterLink v-if="quiz.gate.pending?.length" :to="`/courses/${route.params.courseId}/remediation`"
+                            class="text-xs font-medium text-brand-700 underline">
+                            {{ quiz.gate.pending.length }} remedial belum selesai
+                        </RouterLink>
+                    </div>
+                </BaseCard>
             </li>
         </ul>
     </section>

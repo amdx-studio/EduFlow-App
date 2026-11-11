@@ -3,6 +3,13 @@ import { onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import Badge from '../components/ui/Badge.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage } from '../lib/errors';
 import { useToastStore } from '../stores/toast';
 
@@ -59,50 +66,56 @@ watch(() => route.params.courseId, load);
 <template>
     <section>
         <div class="mb-4">
-            <RouterLink :to="`/courses/${route.params.courseId}/quizzes/new`"
-                class="inline-flex min-h-10 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-                Buat kuis
-            </RouterLink>
+            <BaseButton :to="`/courses/${route.params.courseId}/quizzes/new`">
+                <BaseIcon name="plus" size="sm" />Buat kuis
+            </BaseButton>
         </div>
 
-        <p v-if="loading" class="text-slate-600">Memuat kuis...</p>
+        <div v-if="loading" class="space-y-2" role="status" aria-busy="true">
+            <Skeleton class="h-20 w-full" />
+            <Skeleton class="h-20 w-full" />
+            <span class="sr-only">Memuat kuis...</span>
+        </div>
 
-        <div v-else-if="error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <InlineAlert v-else-if="error" tone="danger" title="Kuis tidak dapat dimuat">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <div class="mt-2">
+                <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
+            </div>
+        </InlineAlert>
 
-        <div v-else-if="quizzes.length === 0"
-            class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-            Belum ada kuis. Buat kuis pertama, lalu tambahkan soal yang bertaut ke konsep.
-        </div>
+        <EmptyState
+            v-else-if="quizzes.length === 0"
+            title="Belum ada kuis"
+            description="Buat kuis pertama, lalu tambahkan soal yang bertaut ke konsep."
+            icon="clipboard"
+        />
 
         <ul v-else class="space-y-2">
-            <li v-for="quiz in quizzes" :key="quiz.id" class="rounded-lg border border-slate-200 bg-white p-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
-                            class="font-semibold text-indigo-700 hover:underline">
-                            {{ quiz.title }}
-                        </RouterLink>
-                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                            <span class="rounded px-2 py-0.5 font-medium"
-                                :class="quiz.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'">
-                                {{ quiz.status === 'published' ? 'Terbit' : 'Draf' }}
-                            </span>
-                            <span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">{{ kindLabel(quiz.kind) }}</span>
-                            <span v-if="quiz.kind === 'reassessment'" class="text-slate-600">dasar: {{ baseTitle(quiz.base_quiz_id) }}</span>
-                            <span class="text-slate-600">{{ quiz.questions_count }} soal</span>
-                            <span class="text-slate-600">{{ quiz.attempts_count }} percobaan</span>
-                            <span class="text-slate-600">maks. {{ quiz.max_attempts }}x</span>
+            <li v-for="quiz in quizzes" :key="quiz.id">
+                <BaseCard>
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
+                                class="font-semibold text-brand-700 hover:underline">
+                                {{ quiz.title }}
+                            </RouterLink>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <Badge :tone="quiz.status === 'published' ? 'success' : 'neutral'">
+                                    {{ quiz.status === 'published' ? 'Terbit' : 'Draf' }}
+                                </Badge>
+                                <Badge>{{ kindLabel(quiz.kind) }}</Badge>
+                                <span v-if="quiz.kind === 'reassessment'" class="text-xs text-slate-600">dasar: {{ baseTitle(quiz.base_quiz_id) }}</span>
+                                <span class="text-xs text-slate-600">{{ quiz.questions_count }} soal</span>
+                                <span class="text-xs text-slate-600">{{ quiz.attempts_count }} percobaan</span>
+                                <span class="text-xs text-slate-600">maks. {{ quiz.max_attempts }}x</span>
+                            </div>
                         </div>
+                        <BaseButton v-if="quiz.status === 'draft'" variant="danger-outline" size="sm" @click="deleting = quiz">
+                            <BaseIcon name="trash" size="sm" />Hapus
+                        </BaseButton>
                     </div>
-                    <button v-if="quiz.status === 'draft'" type="button"
-                        class="min-h-10 rounded-md border border-red-300 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
-                        @click="deleting = quiz">
-                        Hapus
-                    </button>
-                </div>
+                </BaseCard>
             </li>
         </ul>
 
