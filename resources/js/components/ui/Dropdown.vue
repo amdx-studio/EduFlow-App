@@ -8,6 +8,7 @@ const props = defineProps({
     items: { type: Array, required: true },
     align: { type: String, default: 'right' },
     icon: { type: String, default: '' },
+    collapseLabel: { type: Boolean, default: false },
 });
 const emit = defineEmits(['select']);
 
@@ -114,13 +115,14 @@ const itemClass = (item) =>
             type="button"
             class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             aria-haspopup="menu"
+            :aria-label="collapseLabel ? label : undefined"
             :aria-expanded="open"
             :aria-controls="open ? menuId : undefined"
             @click="toggle"
             @keydown="onTriggerKey"
         >
             <BaseIcon v-if="icon" :name="icon" size="sm" />
-            <span class="max-w-40 truncate">{{ label }}</span>
+            <span class="max-w-40 truncate" :class="{ 'hidden sm:inline': collapseLabel }">{{ label }}</span>
             <BaseIcon name="chevron-down" size="sm" />
         </button>
         <div
