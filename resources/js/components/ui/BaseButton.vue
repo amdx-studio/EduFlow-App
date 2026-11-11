@@ -15,6 +15,7 @@ const VARIANTS = {
     secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
     danger: 'bg-danger-600 text-white hover:bg-danger-700',
     ghost: 'text-slate-700 hover:bg-slate-100',
+    'danger-outline': 'border border-danger-300 bg-white text-danger-700 hover:bg-danger-50',
 };
 const SIZES = { md: 'px-4 py-2', sm: 'px-3 py-1.5' };
 </script>
