@@ -46,6 +46,11 @@ class Course extends Model
         return $this->hasMany(Quiz::class);
     }
 
+    public function forumThreads(): HasMany
+    {
+        return $this->hasMany(ForumThread::class);
+    }
+
     /** Guru: kelas miliknya. Siswa: kelas yang diikuti. Selain itu tidak terlihat (404). */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
