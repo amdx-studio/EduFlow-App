@@ -7,6 +7,7 @@ import FormField from '../../components/ui/FormField.vue';
 import BaseInput from '../../components/ui/BaseInput.vue';
 import BaseTextarea from '../../components/ui/BaseTextarea.vue';
 import BaseSelect from '../../components/ui/BaseSelect.vue';
+import BaseCheckbox from '../../components/ui/BaseCheckbox.vue';
 import BaseCard from '../../components/ui/BaseCard.vue';
 import Badge from '../../components/ui/Badge.vue';
 import InlineAlert from '../../components/ui/InlineAlert.vue';
@@ -36,6 +37,8 @@ const demoText = ref('');
 const demoEmail = ref('abc');
 const demoBody = ref('');
 const demoRole = ref('student');
+const demoCheck = ref(true);
+const demoChecks = ref(['pecahan']);
 const crumbs = [{ label: 'Kelas', to: { name: 'courses' } }, { label: 'Matematika 7A' }];
 const toast = useToastStore();
 const modalOpen = ref(false);
@@ -144,6 +147,19 @@ function fakeConfirm() {
 
         <section>
             <h2 class="text-lg font-semibold">Formulir</h2>
+            <BaseCard class="mt-3">
+                <p class="text-sm font-medium text-slate-900">Kotak centang</p>
+                <div class="mt-2 space-y-2">
+                    <BaseCheckbox v-model="demoCheck">Terbitkan materi ({{ demoCheck }})</BaseCheckbox>
+                    <div class="flex flex-wrap gap-4">
+                        <BaseCheckbox v-model="demoChecks" value="pecahan">Pecahan</BaseCheckbox>
+                        <BaseCheckbox v-model="demoChecks" value="desimal">Desimal</BaseCheckbox>
+                        <BaseCheckbox v-model="demoChecks" value="rasio" :invalid="true">Rasio (invalid)</BaseCheckbox>
+                        <BaseCheckbox :model-value="false" disabled>Nonaktif</BaseCheckbox>
+                    </div>
+                    <p class="text-xs text-slate-600">Terpilih: {{ demoChecks.join(', ') || '-' }}</p>
+                </div>
+            </BaseCard>
             <BaseCard class="mt-3">
                 <div class="grid gap-4 sm:grid-cols-2">
                     <FormField label="Nama kelas" hint="Maksimal 100 karakter." required v-slot="{ id, describedby, invalid }">
