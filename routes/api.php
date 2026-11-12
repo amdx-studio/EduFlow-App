@@ -34,7 +34,7 @@ foreach (['course', 'concept', 'lesson', 'quiz', 'question', 'attempt', 'thread'
 }
 
 // Autentikasi (API-02..05). API-01 (csrf-cookie) disediakan Sanctum.
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -53,7 +53,7 @@ Route::bind('course', function ($value) {
 Route::middleware('auth:sanctum')->prefix('courses')->group(function () {
     Route::get('/', [CourseController::class, 'index']);
     Route::post('/', [CourseController::class, 'store'])->middleware('role:teacher');
-    Route::post('join', [EnrollmentController::class, 'join'])->middleware('role:student');
+    Route::post('join', [EnrollmentController::class, 'join'])->middleware(['role:student', 'throttle:join-course']);
     Route::get('{course}', [CourseController::class, 'show']);
     Route::put('{course}', [CourseController::class, 'update'])->middleware('role:teacher');
     Route::post('{course}/archive', [CourseController::class, 'archive'])->middleware('role:teacher');
