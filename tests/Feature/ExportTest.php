@@ -100,10 +100,10 @@ class ExportTest extends TestCase
 
         // [nama, percobaan ke, skor %, Pecahan %, level, Desimal %, level]
         $expected = [
-            ['Ani', '1', 50.0, 100.0, 'mastered', 0.0, 'not_mastered'],
-            ['Budi', '1', 0.0, 0.0, 'not_mastered', 0.0, 'not_mastered'],
-            ['Budi', '2', 75.0, 50.0, 'developing', 100.0, 'mastered'],
-            ['Citra', '1', 50.0, 0.0, 'not_mastered', 100.0, 'mastered'],
+            ['Ani', '1', 50.0, 100.0, 'Menguasai', 0.0, 'Belum menguasai'],
+            ['Budi', '1', 0.0, 0.0, 'Belum menguasai', 0.0, 'Belum menguasai'],
+            ['Budi', '2', 75.0, 50.0, 'Berkembang', 100.0, 'Menguasai'],
+            ['Citra', '1', 50.0, 0.0, 'Belum menguasai', 100.0, 'Menguasai'],
         ];
 
         foreach ($expected as $i => [$name, $no, $score, $pPct, $pLevel, $dPct, $dLevel]) {
@@ -152,12 +152,12 @@ class ExportTest extends TestCase
 
         // [benar, jumlah soal, persen, level, percobaan ke]
         $expected = [
-            'Ani|Pecahan' => ['2', '2', 100.0, 'mastered', '1'],
-            'Ani|Desimal' => ['0', '2', 0.0, 'not_mastered', '1'],
-            'Budi|Pecahan' => ['1', '2', 50.0, 'developing', '2'],
-            'Budi|Desimal' => ['2', '2', 100.0, 'mastered', '2'],
-            'Citra|Pecahan' => ['0', '2', 0.0, 'not_mastered', '1'],
-            'Citra|Desimal' => ['2', '2', 100.0, 'mastered', '1'],
+            'Ani|Pecahan' => ['2', '2', 100.0, 'Menguasai', '1'],
+            'Ani|Desimal' => ['0', '2', 0.0, 'Belum menguasai', '1'],
+            'Budi|Pecahan' => ['1', '2', 50.0, 'Berkembang', '2'],
+            'Budi|Desimal' => ['2', '2', 100.0, 'Menguasai', '2'],
+            'Citra|Pecahan' => ['0', '2', 0.0, 'Belum menguasai', '1'],
+            'Citra|Desimal' => ['2', '2', 100.0, 'Menguasai', '1'],
         ];
 
         foreach ($expected as $key => [$correct, $total, $percent, $level, $no]) {
@@ -232,6 +232,17 @@ class ExportTest extends TestCase
 
         $this->assertSame(5, $export->safe(5));
         $this->assertNull($export->safe(null));
+    }
+
+    public function test_level_labels_are_indonesian(): void
+    {
+        $export = new ExportService;
+
+        $this->assertSame('Menguasai', $export->levelLabel('mastered'));
+        $this->assertSame('Berkembang', $export->levelLabel('developing'));
+        $this->assertSame('Belum menguasai', $export->levelLabel('not_mastered'));
+        $this->assertSame('Data belum cukup', $export->levelLabel('insufficient'));
+        $this->assertNull($export->levelLabel(null));
     }
 
     // TC-055: akses ekspor

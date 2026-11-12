@@ -57,7 +57,7 @@ class ExportService
             foreach ($concepts as $concept) {
                 $result = $byConcept->get($concept->id);
                 $row[] = $result?->mastery_percent;
-                $row[] = $result?->mastery_level;
+                $row[] = $this->levelLabel($result?->mastery_level);
             }
 
             return $row;
@@ -95,7 +95,7 @@ class ExportService
                     $r->earned_points,
                     $r->possible_points,
                     $r->mastery_percent,
-                    $r->mastery_level,
+                    $this->levelLabel($r->mastery_level),
                     $attempt->attempt_no,
                 ];
             }
@@ -139,6 +139,17 @@ class ExportService
     private function wib($time): ?string
     {
         return $time?->copy()->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s');
+    }
+
+    public function levelLabel(?string $level): ?string
+    {
+        return match ($level) {
+            'mastered' => 'Menguasai',
+            'developing' => 'Berkembang',
+            'not_mastered' => 'Belum menguasai',
+            'insufficient' => 'Data belum cukup',
+            default => $level,
+        };
     }
 
     private function conceptLabel($concept): string
