@@ -9,11 +9,15 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RemediationController;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\ThreadController;
 use App\Models\Course;
+use App\Models\ForumPost;
+use App\Models\ForumThread;
 use App\Models\LearningConcept;
 use App\Models\Lesson;
 use App\Models\Question;
@@ -23,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 
 // P10.1: id di URL harus angka dan muat di bigint (maks 18 digit); selain itu 404, bukan 500.
 // Harus didefinisikan sebelum route pertama.
-foreach (['course', 'concept', 'lesson', 'quiz', 'question', 'attempt'] as $param) {
+foreach (['course', 'concept', 'lesson', 'quiz', 'question', 'attempt', 'thread', 'post'] as $param) {
     Route::pattern($param, '[0-9]{1,18}');
 }
 
@@ -155,3 +159,29 @@ Route::post('attempts/{attempt}/remediation', [RemediationController::class, 'st
 
 // --- Phase 11: Beranda (API-42) ---
 Route::get('home', [HomeController::class, 'show'])->middleware('auth:sanctum');
+
+// --- Phase 12: Forum diskusi kelas (API-43..50) ---
+Route::bind('thread', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return ForumThread::visibleTo($user)->findOrFail($value);
+});
+
+Route::bind('post', function ($value) {
+    $user = request()->user();
+    abort_unless($user, 401);
+
+    return ForumPost::visibleTo($user)->findOrFail($value);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('courses/{course}/threads', [ThreadController::class, 'index']);
+    Route::post('courses/{course}/threads', [ThreadController::class, 'store'])->middleware('throttle:forum-write');
+    Route::get('threads/{thread}', [ThreadController::class, 'show']);
+    Route::put('threads/{thread}', [ThreadController::class, 'update']);
+    Route::delete('threads/{thread}', [ThreadController::class, 'destroy']);
+    Route::post('threads/{thread}/posts', [PostController::class, 'store'])->middleware('throttle:forum-write');
+    Route::put('posts/{post}', [PostController::class, 'update']);
+    Route::delete('posts/{post}', [PostController::class, 'destroy']);
+});

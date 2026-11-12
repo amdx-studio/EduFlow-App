@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BuildsAttemptData;
+use Tests\Concerns\BuildsForumData;
 use Tests\TestCase;
 
 /**
@@ -13,6 +14,7 @@ use Tests\TestCase;
 class AccessHardeningTest extends TestCase
 {
     use BuildsAttemptData;
+    use BuildsForumData;
     use RefreshDatabase;
 
     /** @var array<string, mixed> */
@@ -38,6 +40,9 @@ class AccessHardeningTest extends TestCase
             'base_quiz_id' => $quiz->id,
         ]);
 
+        $thread = $this->makeThread($course, $owner);
+        $post = $this->makePost($thread, $owner);
+
         $this->w = [
             'owner' => $owner,
             'other' => $other,
@@ -50,6 +55,8 @@ class AccessHardeningTest extends TestCase
             'lesson' => $lesson,
             'attempt' => $attempt,
             'reassessment' => $reassessment,
+            'thread' => $thread,
+            'post' => $post,
         ];
     }
 
@@ -80,6 +87,8 @@ class AccessHardeningTest extends TestCase
         $q1 = $this->w['question']->id;
         $a = $this->w['attempt']->id;
         $m = $this->w['member']->id;
+        $t = $this->w['thread']->id;
+        $p = $this->w['post']->id;
 
         $teacherOnly = ['member', 'outsider', 'other'];
         $studentOnly = ['owner', 'other', 'outsider'];
@@ -127,6 +136,14 @@ class AccessHardeningTest extends TestCase
             ['POST', "/api/attempts/{$a}/submit", [], $studentOnly],
             ['GET', "/api/attempts/{$a}/result", [], $shared],
             ['POST', "/api/attempts/{$a}/remediation", ['concept_id' => $k, 'lesson_id' => $l], $teacherOnly],
+            ['GET', "/api/courses/{$c}/threads", [], $shared],
+            ['POST', "/api/courses/{$c}/threads", ['title' => 'T', 'body' => 'B'], $shared],
+            ['GET', "/api/threads/{$t}", [], $shared],
+            ['PUT', "/api/threads/{$t}", ['title' => 'Ubah'], $teacherOnly],
+            ['DELETE', "/api/threads/{$t}", [], $teacherOnly],
+            ['POST', "/api/threads/{$t}/posts", ['body' => 'B'], $shared],
+            ['PUT', "/api/posts/{$p}", ['body' => 'Ubah'], $teacherOnly],
+            ['DELETE', "/api/posts/{$p}", [], $teacherOnly],
         ];
     }
 
@@ -213,6 +230,14 @@ class AccessHardeningTest extends TestCase
             ['POST', '/api/attempts/{id}/submit'],
             ['GET', '/api/attempts/{id}/result'],
             ['POST', '/api/attempts/{id}/remediation'],
+            ['GET', '/api/courses/{id}/threads'],
+            ['POST', '/api/courses/{id}/threads'],
+            ['GET', '/api/threads/{id}'],
+            ['PUT', '/api/threads/{id}'],
+            ['DELETE', '/api/threads/{id}'],
+            ['POST', '/api/threads/{id}/posts'],
+            ['PUT', '/api/posts/{id}'],
+            ['DELETE', '/api/posts/{id}'],
         ];
 
         $failures = [];
@@ -245,6 +270,8 @@ class AccessHardeningTest extends TestCase
         $r = $this->w['reassessment']->id;
         $q1 = $this->w['question']->id;
         $a = $this->w['attempt']->id;
+        $t = $this->w['thread']->id;
+        $p = $this->w['post']->id;
 
         $lesson = ['title' => 'T', 'content' => 'C', 'kind' => 'regular'];
         $remedial = ['title' => 'T', 'content' => 'C', 'kind' => 'remedial'];
@@ -268,6 +295,14 @@ class AccessHardeningTest extends TestCase
             ['owner', 'PUT', "/api/concepts/{$k}", ['name' => str_repeat('a', 300)]],
             ['owner', 'POST', '/api/courses', ['title' => ['x']]],
             ['outsider', 'POST', '/api/courses/join', ['join_code' => ['x']]],
+            ['owner', 'GET', "/api/courses/{$c}/threads?before_id=abc", []],
+            ['owner', 'GET', "/api/courses/{$c}/threads?before_id=99999999999999999999", []],
+            ['owner', 'POST', "/api/courses/{$c}/threads", ['title' => ['x'], 'body' => 'B']],
+            ['owner', 'POST', "/api/courses/{$c}/threads", ['title' => 'T', 'body' => ['x']]],
+            ['owner', 'POST', "/api/threads/{$t}/posts", ['body' => ['x']]],
+            ['owner', 'PUT', "/api/threads/{$t}", ['title' => str_repeat('a', 151)]],
+            ['owner', 'PUT', "/api/threads/{$t}", ['is_pinned' => 'abc']],
+            ['owner', 'PUT', "/api/posts/{$p}", ['body' => ['x']]],
         ];
 
         $failures = [];
