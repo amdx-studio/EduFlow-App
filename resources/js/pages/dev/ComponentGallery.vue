@@ -141,6 +141,7 @@ function fakeConfirm() {
                     <BaseButton :disabled="true">Nonaktif</BaseButton>
                     <BaseButton variant="secondary" :to="{ name: 'courses' }">Tautan ke Kelas</BaseButton>
                     <BaseButton variant="secondary"><BaseIcon name="plus" size="sm" />Dengan ikon</BaseButton>
+                    <BaseButton variant="ghost" size="icon" aria-label="Tutup"><BaseIcon name="x" size="sm" /></BaseButton>
                 </div>
             </div>
         </section>

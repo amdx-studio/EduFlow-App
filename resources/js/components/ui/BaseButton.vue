@@ -17,14 +17,14 @@ const VARIANTS = {
     ghost: 'text-slate-700 hover:bg-slate-100',
     'danger-outline': 'border border-danger-300 bg-white text-danger-700 hover:bg-danger-50',
 };
-const SIZES = { md: 'px-4 py-2', sm: 'px-3 py-1.5' };
+const SIZES = { md: 'min-h-10 px-4 py-2', sm: 'min-h-10 px-3 py-1.5', icon: 'h-8 w-8 p-0' };
 </script>
 
 <template>
     <component
         :is="to ? RouterLink : 'button'"
         v-bind="to ? { to } : { type, disabled: disabled || loading }"
-        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
+        class="inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
         :class="[VARIANTS[variant] ?? VARIANTS.primary, SIZES[size] ?? SIZES.md]"
         :aria-busy="loading || undefined"
     >
