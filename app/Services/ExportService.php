@@ -143,6 +143,6 @@ class ExportService
 
     private function conceptLabel($concept): string
     {
-        return (string) ($concept->title ?? $concept->name ?? 'Konsep '.$concept->id);
+        return (string) $concept->name;
     }
 }
