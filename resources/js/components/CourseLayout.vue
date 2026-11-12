@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, provide, ref, watch } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import http from '../api/http';
 import { errorMessage } from '../lib/errors';
@@ -20,6 +20,8 @@ const auth = useAuthStore();
 const toast = useToastStore();
 
 const course = ref(null);
+// Dipakai halaman anak (forum) untuk mengetahui kelas arsip tanpa permintaan tambahan.
+provide('course', course);
 const loading = ref(true);
 const error = ref('');
 const notFound = ref(false);
@@ -50,6 +52,7 @@ const tabs = computed(() => {
         list.push({ key: 'students', label: 'Siswa', to: `${base}/students`, alsoActive: ['student-detail'] });
         list.push({ key: 'dashboard', label: 'Dashboard', to: `${base}/dashboard` });
     }
+    list.push({ key: 'forum', label: 'Forum', to: `${base}/forum`, alsoActive: ['forum-thread'] });
     return list;
 });
 
