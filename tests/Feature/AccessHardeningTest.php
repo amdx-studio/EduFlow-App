@@ -138,6 +138,8 @@ class AccessHardeningTest extends TestCase
             ['POST', "/api/attempts/{$a}/remediation", ['concept_id' => $k, 'lesson_id' => $l], $teacherOnly],
             ['GET', "/api/quizzes/{$q}/export/attempts", [], $teacherOnly],
             ['GET', "/api/quizzes/{$q}/export/mastery", [], $teacherOnly],
+            ['PUT', '/api/profile', ['name' => 'X'], []],
+            ['PUT', '/api/profile/password', ['current_password' => 'x', 'password' => 'password-baru-2', 'password_confirmation' => 'password-baru-2'], []],
             ['GET', "/api/courses/{$c}/threads", [], $shared],
             ['POST', "/api/courses/{$c}/threads", ['title' => 'T', 'body' => 'B'], $shared],
             ['GET', "/api/threads/{$t}", [], $shared],

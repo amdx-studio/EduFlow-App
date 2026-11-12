@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RemediationController;
@@ -191,4 +192,11 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     Route::get('quizzes/{quiz}/export/attempts', [ExportController::class, 'attempts']);
     Route::get('quizzes/{quiz}/export/mastery', [ExportController::class, 'mastery']);
+});
+
+// --- Phase 13: Profil (API-53, API-54) ---
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('profile', [ProfileController::class, 'update']);
+    Route::put('profile/password', [ProfileController::class, 'password'])
+        ->middleware('throttle:password-change');
 });
