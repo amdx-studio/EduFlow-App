@@ -35,7 +35,7 @@ async function submit() {
     try {
         await auth.register(payload);
         toast.success('Akun berhasil dibuat.');
-        await router.push('/courses');
+        await router.push('/home');
     } catch (e) {
         errors.value = fieldErrors(e);
         if (!Object.keys(errors.value).length) {
