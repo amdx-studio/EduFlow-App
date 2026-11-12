@@ -1,5 +1,6 @@
 <script setup>
 import { useToastStore } from '../stores/toast';
+import BaseButton from './ui/BaseButton.vue';
 import BaseIcon from './ui/BaseIcon.vue';
 
 const toast = useToastStore();
@@ -22,9 +23,9 @@ const tone = (type) => TONES[type] ?? TONES.success;
         >
             <BaseIcon :name="tone(item.type).icon" class="mt-0.5" />
             <span class="min-w-0 flex-1">{{ item.message }}</span>
-            <button type="button" class="-m-1 rounded p-1 hover:bg-black/5" aria-label="Tutup" @click="toast.dismiss(item.id)">
+            <BaseButton variant="ghost" size="icon" class="-my-1.5 -mr-2" aria-label="Tutup" @click="toast.dismiss(item.id)">
                 <BaseIcon name="x" size="sm" />
-            </button>
+            </BaseButton>
         </div>
     </div>
 </template>
