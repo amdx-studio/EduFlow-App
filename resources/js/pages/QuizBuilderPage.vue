@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import ExportButtons from '../components/ExportButtons.vue';
 import PublishPanel from '../components/PublishPanel.vue';
 import QuestionEditor from '../components/QuestionEditor.vue';
 import Badge from '../components/ui/Badge.vue';
@@ -235,6 +236,8 @@ onMounted(() => load());
             <PublishPanel :quiz="quiz" :publishing="publishing" :reverting="reverting"
                 :error-messages="publishErrors" :warnings="warnings"
                 @publish="publish" @revert="revert" />
+
+            <ExportButtons v-if="!isDraft" :quiz-id="quizId" />
 
             <BaseCard>
                 <form @submit.prevent="saveSettings">

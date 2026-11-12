@@ -132,11 +132,11 @@ watch(() => route.params.courseId, load);
                     </div>
                 </template>
                 <template v-if="auth.isTeacher && !course.is_archived" #actions>
-                    <BaseButton variant="secondary" @click="confirmArchive = true">Arsipkan kelas</BaseButton>
+                    <BaseButton variant="secondary" class="print:hidden" @click="confirmArchive = true">Arsipkan kelas</BaseButton>
                 </template>
             </PageHeader>
 
-            <TabNav class="mt-4" :tabs="tabs" label="Tab kelas" />
+            <TabNav class="mt-4 print:hidden" :tabs="tabs" label="Tab kelas" />
 
             <div class="mt-4">
                 <RouterView />

@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import http from '../api/http';
 import ComparisonTable from '../components/ComparisonTable.vue';
+import PrintButton from '../components/PrintButton.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseIcon from '../components/ui/BaseIcon.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
@@ -60,7 +61,10 @@ watch(() => [route.params.quizId, route.query.student_id], load);
             <BaseIcon name="arrow-left" size="sm" />Kembali ke kuis
         </BaseButton>
 
-        <h1 class="mt-2 text-2xl font-semibold">Perbandingan sebelum dan sesudah</h1>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <h1 class="text-2xl font-semibold">Perbandingan sebelum dan sesudah</h1>
+            <PrintButton v-if="result" />
+        </div>
 
         <div v-if="loading" class="mt-3 space-y-3" role="status" aria-busy="true">
             <Skeleton class="h-40 w-full" />

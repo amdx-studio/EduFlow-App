@@ -2,7 +2,9 @@
 import { onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
+import ExportButtons from '../components/ExportButtons.vue';
 import LevelDistribution from '../components/LevelDistribution.vue';
+import PrintButton from '../components/PrintButton.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseCard from '../components/ui/BaseCard.vue';
 import BaseSelect from '../components/ui/BaseSelect.vue';
@@ -74,6 +76,11 @@ watch(() => route.params.courseId, () => load());
         </InlineAlert>
 
         <div v-else-if="data" class="space-y-5">
+            <div class="flex flex-wrap items-center justify-end gap-2 print:hidden">
+                <ExportButtons v-if="data.quiz" :quiz-id="data.quiz.id" />
+                <PrintButton />
+            </div>
+
             <div class="flex flex-wrap items-end gap-3">
                 <FormField label="Kuis dasar" v-slot="{ id }">
                     <BaseSelect :id="id" v-model="selectedQuizId" :disabled="loading || !data.quizzes.length" @change="onSelect">

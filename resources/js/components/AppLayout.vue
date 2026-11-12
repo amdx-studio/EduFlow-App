@@ -15,7 +15,11 @@ const loggingOut = ref(false);
 const roleLabel = computed(() => (auth.isTeacher ? 'Guru' : 'Siswa'));
 const inHome = computed(() => route.path === '/home');
 const inCourses = computed(() => route.path.startsWith('/courses') || route.path.startsWith('/attempts'));
-const menuItems = [{ key: 'logout', label: 'Keluar', icon: 'log-out' }];
+const inAccount = computed(() => route.path === '/account');
+const menuItems = [
+    { key: 'account', label: 'Akun', icon: 'user' },
+    { key: 'logout', label: 'Keluar', icon: 'log-out' },
+];
 
 const navClass = (active) => [
     'inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors duration-150',
@@ -27,7 +31,9 @@ function focusMain() {
 }
 
 async function onSelect(key) {
-    if (key === 'logout') {
+    if (key === 'account') {
+        await router.push({ name: 'account' });
+    } else if (key === 'logout') {
         await logout();
     }
 }
@@ -49,14 +55,15 @@ async function logout() {
 
 <template>
     <div class="min-h-screen bg-slate-50 text-slate-900">
-        <a href="#konten" class="skip-link" @click.prevent="focusMain">Lewati ke konten</a>
-        <header class="sticky top-0 z-20 border-b border-slate-200 bg-white">
+        <a href="#konten" class="skip-link print:hidden" @click.prevent="focusMain">Lewati ke konten</a>
+        <header class="sticky top-0 z-20 border-b border-slate-200 bg-white print:hidden">
             <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
                 <div class="flex min-w-0 items-center gap-3 sm:gap-6">
                     <RouterLink to="/home" class="shrink-0 text-lg font-bold text-brand-700">EduFlow</RouterLink>
                     <nav aria-label="Utama" class="flex items-center gap-1">
                         <RouterLink to="/home" :class="navClass(inHome)" :aria-current="inHome ? 'page' : undefined">Beranda</RouterLink>
                         <RouterLink to="/courses" :class="navClass(inCourses)" :aria-current="inCourses ? 'page' : undefined">Kelas</RouterLink>
+                        <RouterLink to="/account" :class="navClass(inAccount)" :aria-current="inAccount ? 'page' : undefined">Akun</RouterLink>
                     </nav>
                 </div>
                 <div class="flex min-w-0 items-center gap-3">

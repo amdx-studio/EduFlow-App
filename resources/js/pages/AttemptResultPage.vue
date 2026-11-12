@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import AnswerReview from '../components/AnswerReview.vue';
+import PrintButton from '../components/PrintButton.vue';
 import ResultTable from '../components/ResultTable.vue';
 import RemediationCard from '../components/RemediationCard.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
@@ -63,10 +64,10 @@ watch(() => route.params.attemptId, load);
 <template>
     <section>
         <RouterLink v-if="quiz" :to="`/courses/${quiz.course_id}/quizzes/${quiz.id}`"
-            class="text-sm text-brand-700 hover:underline">
+            class="text-sm text-brand-700 hover:underline print:hidden">
             &larr; Kembali ke kuis
         </RouterLink>
-        <RouterLink v-else to="/courses" class="text-sm text-brand-700 hover:underline">&larr; Daftar kelas</RouterLink>
+        <RouterLink v-else to="/courses" class="text-sm text-brand-700 hover:underline print:hidden">&larr; Daftar kelas</RouterLink>
 
         <div v-if="loading" class="mt-3 space-y-2" role="status" aria-busy="true">
             <Skeleton class="h-6 w-1/3" />
@@ -85,6 +86,8 @@ watch(() => route.params.attemptId, load);
         </InlineAlert>
 
         <div v-else-if="result" class="mt-3 space-y-5">
+            <div class="flex justify-end print:hidden"><PrintButton /></div>
+
             <BaseCard>
                 <h1 class="text-lg font-semibold text-slate-900">{{ quiz?.title ?? 'Hasil kuis' }}</h1>
                 <p class="text-sm text-slate-600">

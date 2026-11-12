@@ -102,3 +102,27 @@
         top: 0.5rem;
     }
 }
+
+@media print {
+    @page {
+        margin: 1.5cm;
+    }
+
+    body {
+        background: white;
+    }
+
+    tr,
+    li {
+        break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
