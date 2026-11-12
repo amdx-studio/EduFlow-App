@@ -22,6 +22,8 @@ import RemediationPage from '../pages/RemediationPage.vue';
 import ComparisonPage from '../pages/ComparisonPage.vue';
 import DashboardPage from '../pages/DashboardPage.vue';
 import StudentDetailPage from '../pages/StudentDetailPage.vue';
+import CourseForumPage from '../pages/CourseForumPage.vue';
+import ForumThreadPage from '../pages/ForumThreadPage.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -57,6 +59,8 @@ const router = createRouter({
                         { path: 'students/:studentId', name: 'student-detail', component: StudentDetailPage, meta: { roles: ['teacher'] } },
                         { path: 'remediation', name: 'course-remediation', component: RemediationPage, meta: { roles: ['student'] } },
                         { path: 'dashboard', name: 'course-dashboard', component: DashboardPage, meta: { roles: ['teacher'] } },
+                        { path: 'forum', name: 'course-forum', component: CourseForumPage },
+                        { path: 'forum/:threadId', name: 'forum-thread', component: ForumThreadPage },
                     ],
                 },
                 { path: 'attempts/:attemptId/result', name: 'attempt-result', component: AttemptResultPage },
@@ -118,6 +122,8 @@ const TITLES = {
     'student-detail': 'Detail siswa',
     'course-remediation': 'Remedial saya',
     'course-dashboard': 'Dashboard',
+    'course-forum': 'Forum',
+    'forum-thread': 'Utas',
     'attempt-result': 'Hasil kuis',
     attempt: 'Mengerjakan kuis',
     forbidden: 'Tidak diizinkan',
