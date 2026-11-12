@@ -2,33 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Course;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\BuildsAttemptData;
 use Tests\TestCase;
 
 class CourseTest extends TestCase
 {
+    use BuildsAttemptData;
     use RefreshDatabase;
-
-    private function teacher(): User
-    {
-        return User::factory()->create(['role' => 'teacher']);
-    }
-
-    private function student(): User
-    {
-        return User::factory()->create(['role' => 'student']);
-    }
-
-    private function course(User $teacher, array $extra = []): Course
-    {
-        return Course::create(array_merge([
-            'teacher_id' => $teacher->id,
-            'title' => 'Matematika',
-            'join_code' => Course::generateJoinCode(),
-        ], $extra))->refresh();
-    }
 
     // TC-009
     public function test_tc009_teacher_creates_course_with_defaults_and_join_code(): void

@@ -2,48 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\Course;
-use App\Models\LearningConcept;
 use App\Models\Question;
 use App\Models\Quiz;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\BuildsAttemptData;
 use Tests\TestCase;
 
 class ConceptTest extends TestCase
 {
+    use BuildsAttemptData;
     use RefreshDatabase;
-
-    private function signIn(User $user): void
-    {
-        // Guard sanctum menyimpan user antar request dalam satu test; reset agar pergantian user nyata.
-        $this->app['auth']->forgetGuards();
-        $this->actingAs($user, 'web');
-    }
-
-    private function teacher(): User
-    {
-        return User::factory()->create(['role' => 'teacher']);
-    }
-
-    private function student(): User
-    {
-        return User::factory()->create(['role' => 'student']);
-    }
-
-    private function course(User $teacher): Course
-    {
-        return Course::create([
-            'teacher_id' => $teacher->id,
-            'title' => 'Matematika',
-            'join_code' => Course::generateJoinCode(),
-        ])->refresh();
-    }
-
-    private function concept(Course $course, string $name = 'Pecahan'): LearningConcept
-    {
-        return LearningConcept::create(['course_id' => $course->id, 'name' => $name]);
-    }
 
     // TC-013
     public function test_tc013_teacher_crud_concepts_with_duplicate_and_in_use_rules(): void

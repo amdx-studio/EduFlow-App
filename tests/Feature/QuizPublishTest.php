@@ -9,28 +9,13 @@ use App\Models\QuestionOption;
 use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\BuildsAttemptData;
 use Tests\TestCase;
 
 class QuizPublishTest extends TestCase
 {
+    use BuildsAttemptData;
     use RefreshDatabase;
-
-    private function signIn(User $user): void
-    {
-        // Guard sanctum menyimpan user antar request dalam satu test; reset agar pergantian user nyata.
-        $this->app['auth']->forgetGuards();
-        $this->actingAs($user, 'web');
-    }
-
-    private function teacher(): User
-    {
-        return User::factory()->create(['role' => 'teacher']);
-    }
-
-    private function student(): User
-    {
-        return User::factory()->create(['role' => 'student']);
-    }
 
     private function course(User $teacher): Course
     {
@@ -40,11 +25,6 @@ class QuizPublishTest extends TestCase
             'join_code' => Course::generateJoinCode(),
             'min_questions_per_concept' => 2,
         ])->refresh();
-    }
-
-    private function concept(Course $course, string $name = 'Pecahan'): LearningConcept
-    {
-        return LearningConcept::create(['course_id' => $course->id, 'name' => $name]);
     }
 
     private function quiz(Course $course, array $extra = []): Quiz
