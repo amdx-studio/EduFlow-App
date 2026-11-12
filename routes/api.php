@@ -9,10 +9,12 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RemediationController;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\ThreadController;
 use App\Models\Course;
 use App\Models\ForumPost;
 use App\Models\ForumThread;
@@ -171,4 +173,15 @@ Route::bind('post', function ($value) {
     abort_unless($user, 401);
 
     return ForumPost::visibleTo($user)->findOrFail($value);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('courses/{course}/threads', [ThreadController::class, 'index']);
+    Route::post('courses/{course}/threads', [ThreadController::class, 'store'])->middleware('throttle:forum-write');
+    Route::get('threads/{thread}', [ThreadController::class, 'show']);
+    Route::put('threads/{thread}', [ThreadController::class, 'update']);
+    Route::delete('threads/{thread}', [ThreadController::class, 'destroy']);
+    Route::post('threads/{thread}/posts', [PostController::class, 'store'])->middleware('throttle:forum-write');
+    Route::put('posts/{post}', [PostController::class, 'update']);
+    Route::delete('posts/{post}', [PostController::class, 'destroy']);
 });
