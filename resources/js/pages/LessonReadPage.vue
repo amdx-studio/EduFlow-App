@@ -3,6 +3,12 @@ import { onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import http from '../api/http';
 import MarkdownView from '../components/MarkdownView.vue';
+import Badge from '../components/ui/Badge.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseCard from '../components/ui/BaseCard.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import InlineAlert from '../components/ui/InlineAlert.vue';
+import Skeleton from '../components/ui/Skeleton.vue';
 import { errorMessage } from '../lib/errors';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
@@ -55,56 +61,53 @@ watch(() => route.params.lessonId, load);
 
 <template>
     <section>
-        <RouterLink :to="`/courses/${route.params.courseId}/lessons`" class="text-sm text-indigo-700 hover:underline">
+        <RouterLink :to="`/courses/${route.params.courseId}/lessons`" class="text-sm text-brand-700 hover:underline">
             &larr; Daftar materi
         </RouterLink>
 
-        <p v-if="loading" class="mt-3 text-slate-600">Memuat materi...</p>
-
-        <div v-else-if="notFound" class="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p class="font-semibold">Materi tidak ditemukan.</p>
+        <div v-if="loading" class="mt-3 space-y-2" role="status" aria-busy="true">
+            <Skeleton class="h-6 w-1/2" />
+            <Skeleton class="h-4 w-full" />
+            <Skeleton class="h-4 w-2/3" />
+            <span class="sr-only">Memuat materi...</span>
         </div>
 
-        <div v-else-if="error" class="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <EmptyState v-else-if="notFound" class="mt-3" title="Materi tidak ditemukan." icon="book-open">
+            <BaseButton variant="secondary" :to="`/courses/${route.params.courseId}/lessons`">Daftar materi</BaseButton>
+        </EmptyState>
+
+        <InlineAlert v-else-if="error" tone="danger" class="mt-3">
             {{ error }}
-            <button type="button" class="ml-2 underline" @click="load">Coba lagi</button>
-        </div>
+            <BaseButton variant="secondary" size="sm" class="ml-2" @click="load">Coba lagi</BaseButton>
+        </InlineAlert>
 
-        <article v-else-if="lesson" class="mt-3 rounded-lg border border-slate-200 bg-white p-5">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <h2 class="text-xl font-bold">{{ lesson.title }}</h2>
-                <RouterLink v-if="auth.isTeacher" :to="`/courses/${route.params.courseId}/lessons/${lesson.id}/edit`"
-                    class="inline-flex min-h-10 items-center rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100">
-                    Ubah
-                </RouterLink>
-            </div>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                <span class="rounded px-2 py-0.5 font-medium"
-                    :class="lesson.kind === 'remedial' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'">
-                    {{ lesson.kind === 'remedial' ? 'Remedial' : 'Reguler' }}
-                </span>
-                <span v-for="concept in lesson.concepts" :key="concept.id"
-                    class="rounded bg-indigo-50 px-2 py-0.5 text-indigo-800">
-                    {{ concept.name }}
-                </span>
-                <span v-if="auth.isTeacher && !lesson.is_published"
-                    class="rounded bg-slate-200 px-2 py-0.5 font-medium text-slate-700">
-                    Draf
-                </span>
-            </div>
+        <BaseCard v-else-if="lesson" class="mt-3">
+            <article>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <h2 class="text-xl font-semibold text-slate-900">{{ lesson.title }}</h2>
+                    <BaseButton v-if="auth.isTeacher" variant="secondary" size="sm" :to="`/courses/${route.params.courseId}/lessons/${lesson.id}/edit`">
+                        Ubah
+                    </BaseButton>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge :tone="lesson.kind === 'remedial' ? 'warning' : 'neutral'">
+                        {{ lesson.kind === 'remedial' ? 'Remedial' : 'Reguler' }}
+                    </Badge>
+                    <Badge v-for="concept in lesson.concepts" :key="concept.id" tone="brand">{{ concept.name }}</Badge>
+                    <Badge v-if="auth.isTeacher && !lesson.is_published">Draf</Badge>
+                </div>
 
-            <div class="mt-4">
-                <MarkdownView :source="lesson.content" />
-            </div>
+                <div class="mt-4">
+                    <MarkdownView :source="lesson.content" />
+                </div>
 
-            <div v-if="!auth.isTeacher" class="mt-6 border-t border-slate-200 pt-4">
-                <p v-if="lesson.completed" class="font-medium text-green-800">&#10003; Anda sudah menandai materi ini selesai.</p>
-                <button v-else type="button" :disabled="completing"
-                    class="min-h-10 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                    @click="complete">
-                    {{ completing ? 'Menyimpan...' : 'Tandai selesai' }}
-                </button>
-            </div>
-        </article>
+                <div v-if="!auth.isTeacher" class="mt-6 border-t border-slate-200 pt-4">
+                    <InlineAlert v-if="lesson.completed" tone="success">Anda sudah menandai materi ini selesai.</InlineAlert>
+                    <BaseButton v-else :loading="completing" @click="complete">
+                        {{ completing ? 'Menyimpan...' : 'Tandai selesai' }}
+                    </BaseButton>
+                </div>
+            </article>
+        </BaseCard>
     </section>
 </template>
