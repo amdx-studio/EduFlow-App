@@ -4,6 +4,7 @@ import AppLayout from '../components/AppLayout.vue';
 import LoginPage from '../pages/LoginPage.vue';
 import RegisterPage from '../pages/RegisterPage.vue';
 import CoursesPage from '../pages/CoursesPage.vue';
+import HomePage from '../pages/HomePage.vue';
 import ForbiddenPage from '../pages/ForbiddenPage.vue';
 import NotFoundPage from '../pages/NotFoundPage.vue';
 import CourseLayout from '../components/CourseLayout.vue';
@@ -25,7 +26,7 @@ import StudentDetailPage from '../pages/StudentDetailPage.vue';
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        { path: '/', redirect: '/courses' },
+        { path: '/', redirect: '/home' },
         { path: '/login', name: 'login', component: LoginPage, meta: { guest: true } },
         { path: '/register', name: 'register', component: RegisterPage, meta: { guest: true } },
         {
@@ -33,6 +34,7 @@ const router = createRouter({
             component: AppLayout,
             meta: { requiresAuth: true },
             children: [
+                { path: 'home', name: 'home', component: HomePage },
                 { path: 'courses', name: 'courses', component: CoursesPage },
                 {
                     path: 'courses/:courseId',
@@ -77,7 +79,7 @@ router.beforeEach(async (to) => {
     }
 
     if (to.meta.guest && auth.isAuthenticated) {
-        return { name: 'courses' };
+        return { name: 'home' };
     }
 
     const roles = to.meta.roles;
@@ -101,6 +103,7 @@ if (import.meta.env.DEV) {
 const TITLES = {
     login: 'Masuk',
     register: 'Daftar',
+    home: 'Beranda',
     courses: 'Daftar kelas',
     'course-lessons': 'Materi',
     'lesson-new': 'Materi baru',

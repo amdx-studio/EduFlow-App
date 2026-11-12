@@ -13,8 +13,14 @@ const route = useRoute();
 const loggingOut = ref(false);
 
 const roleLabel = computed(() => (auth.isTeacher ? 'Guru' : 'Siswa'));
+const inHome = computed(() => route.path === '/home');
 const inCourses = computed(() => route.path.startsWith('/courses') || route.path.startsWith('/attempts'));
 const menuItems = [{ key: 'logout', label: 'Keluar', icon: 'log-out' }];
+
+const navClass = (active) => [
+    'inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors duration-150',
+    active ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100',
+];
 
 function focusMain() {
     document.getElementById('konten')?.focus();
@@ -46,17 +52,11 @@ async function logout() {
         <a href="#konten" class="skip-link" @click.prevent="focusMain">Lewati ke konten</a>
         <header class="sticky top-0 z-20 border-b border-slate-200 bg-white">
             <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
-                <div class="flex min-w-0 items-center gap-4 sm:gap-6">
-                    <RouterLink to="/courses" class="shrink-0 text-lg font-bold text-brand-700">EduFlow</RouterLink>
-                    <nav aria-label="Utama">
-                        <RouterLink
-                            to="/courses"
-                            class="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors duration-150"
-                            :class="inCourses ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'"
-                            :aria-current="inCourses ? 'page' : undefined"
-                        >
-                            Kelas
-                        </RouterLink>
+                <div class="flex min-w-0 items-center gap-3 sm:gap-6">
+                    <RouterLink to="/home" class="shrink-0 text-lg font-bold text-brand-700">EduFlow</RouterLink>
+                    <nav aria-label="Utama" class="flex items-center gap-1">
+                        <RouterLink to="/home" :class="navClass(inHome)" :aria-current="inHome ? 'page' : undefined">Beranda</RouterLink>
+                        <RouterLink to="/courses" :class="navClass(inCourses)" :aria-current="inCourses ? 'page' : undefined">Kelas</RouterLink>
                     </nav>
                 </div>
                 <div class="flex min-w-0 items-center gap-3">

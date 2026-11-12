@@ -26,7 +26,7 @@ async function submit() {
         await auth.login({ email: form.email, password: form.password });
         const target = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
             ? route.query.redirect
-            : '/courses';
+            : '/home';
         await router.push(target);
     } catch (e) {
         errors.value = fieldErrors(e);
