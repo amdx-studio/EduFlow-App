@@ -44,14 +44,7 @@ class DashboardService
             ];
         }
 
-        $latest = QuizAttempt::where('quiz_id', $quiz->id)
-            ->where('status', 'submitted')
-            ->whereIn('student_id', $students->keys())
-            ->with('conceptResults.concept')
-            ->get()
-            ->groupBy('student_id')
-            ->map(fn ($group) => $group->sortByDesc('attempt_no')->first())
-            ->values();
+        $latest = $this->latestSubmitted($quiz, $students);
 
         $rows = $latest->flatMap(fn (QuizAttempt $a) => $a->conceptResults);
 
@@ -71,6 +64,38 @@ class DashboardService
             'resource_gaps' => $this->resourceGaps($course, $rows),
             'comparison' => $this->comparisons($course, $quiz, $students),
         ];
+    }
+
+    /**
+     * Jumlah siswa perlu perhatian pada kuis dasar bawaan kelas. Aturannya sama dengan
+     * dashboard karena memakai latestSubmitted() dan attention() yang sama (KT-15).
+     */
+    public function attentionCount(Course $course): int
+    {
+        $quiz = $this->selectQuiz($course, null);
+
+        if ($quiz === null) {
+            return 0;
+        }
+
+        $students = $course->students()->orderBy('users.name')->get(['users.id', 'users.name'])->keyBy('id');
+
+        return count($this->attention($this->latestSubmitted($quiz, $students), $students));
+    }
+
+    /**
+     * Percobaan tersubmit terakhir tiap siswa terdaftar pada satu kuis.
+     */
+    private function latestSubmitted(Quiz $quiz, $students)
+    {
+        return QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('status', 'submitted')
+            ->whereIn('student_id', $students->keys())
+            ->with('conceptResults.concept')
+            ->get()
+            ->groupBy('student_id')
+            ->map(fn ($group) => $group->sortByDesc('attempt_no')->first())
+            ->values();
     }
 
     private function selectQuiz(Course $course, ?int $quizId): ?Quiz

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
@@ -151,3 +152,6 @@ Route::get('courses/{course}/students/{student}', [StudentController::class, 'sh
     ->middleware(['auth:sanctum', 'role:teacher']);
 Route::post('attempts/{attempt}/remediation', [RemediationController::class, 'store'])
     ->middleware(['auth:sanctum', 'role:teacher']);
+
+// --- Phase 11: Beranda (API-42) ---
+Route::get('home', [HomeController::class, 'show'])->middleware('auth:sanctum');
