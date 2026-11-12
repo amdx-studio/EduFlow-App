@@ -40,6 +40,13 @@ export const useAuthStore = defineStore('auth', {
             this.user = data.data;
             this.ready = true;
         },
+        async updateProfile(payload) {
+            const { data } = await http.put('/api/profile', payload);
+            this.user = data.data ?? this.user;
+        },
+        async changePassword(payload) {
+            await http.put('/api/profile/password', payload);
+        },
         async logout() {
             try {
                 await http.post('/api/logout');

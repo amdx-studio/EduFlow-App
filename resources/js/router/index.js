@@ -24,6 +24,7 @@ import DashboardPage from '../pages/DashboardPage.vue';
 import StudentDetailPage from '../pages/StudentDetailPage.vue';
 import CourseForumPage from '../pages/CourseForumPage.vue';
 import ForumThreadPage from '../pages/ForumThreadPage.vue';
+import AccountPage from '../pages/AccountPage.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -38,6 +39,7 @@ const router = createRouter({
             children: [
                 { path: 'home', name: 'home', component: HomePage },
                 { path: 'courses', name: 'courses', component: CoursesPage },
+                { path: 'account', name: 'account', component: AccountPage },
                 {
                     path: 'courses/:courseId',
                     component: CourseLayout,
@@ -108,6 +110,7 @@ const TITLES = {
     login: 'Masuk',
     register: 'Daftar',
     home: 'Beranda',
+    account: 'Akun',
     courses: 'Daftar kelas',
     'course-lessons': 'Materi',
     'lesson-new': 'Materi baru',
