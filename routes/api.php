@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ConceptController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\PostController;
@@ -184,4 +185,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('threads/{thread}/posts', [PostController::class, 'store'])->middleware('throttle:forum-write');
     Route::put('posts/{post}', [PostController::class, 'update']);
     Route::delete('posts/{post}', [PostController::class, 'destroy']);
+});
+
+// --- Phase 13: Ekspor CSV (API-51, API-52) ---
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
+    Route::get('quizzes/{quiz}/export/attempts', [ExportController::class, 'attempts']);
+    Route::get('quizzes/{quiz}/export/mastery', [ExportController::class, 'mastery']);
 });
