@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Mockery\MockInterface;
 use RuntimeException;
 use Tests\Concerns\BuildsAttemptData;
+use Tests\Concerns\TruncatesAfterTest;
 use Tests\TestCase;
 
 /**
@@ -19,6 +20,7 @@ class SubmitRollbackTest extends TestCase
 {
     use BuildsAttemptData;
     use DatabaseTruncation;
+    use TruncatesAfterTest;
 
     public function test_tc026_submit_rolls_back_for_real_without_test_transaction_wrapper(): void
     {
@@ -66,21 +68,5 @@ class SubmitRollbackTest extends TestCase
 
         // Percobaan tetap dapat dipakai setelah kegagalan.
         $this->answer($id, $q1, false)->assertOk();
-    }
-
-    /** DatabaseTruncation membersihkan sebelum tes; bersihkan juga sesudahnya agar tes RefreshDatabase tidak melihat sisa data. */
-    protected function tearDown(): void
-    {
-        $tables = collect(DB::select('select tablename from pg_tables where schemaname = current_schema()'))
-            ->pluck('tablename')
-            ->reject(fn ($name) => $name === 'migrations')
-            ->map(fn ($name) => '"'.$name.'"')
-            ->implode(', ');
-
-        if ($tables !== '') {
-            DB::statement("TRUNCATE TABLE {$tables} RESTART IDENTITY CASCADE");
-        }
-
-        parent::tearDown();
     }
 }

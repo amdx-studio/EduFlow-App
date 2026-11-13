@@ -9,8 +9,11 @@ use App\Models\AttemptConceptResult;
 use App\Models\Course;
 use App\Models\QuizAttempt;
 use App\Models\RemediationAssignment;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class RemediationController extends Controller
 {
@@ -42,18 +45,23 @@ class RemediationController extends Controller
     {
         $data = $request->validated();
 
-        $assignment = RemediationAssignment::create([
-            'attempt_id' => $attempt->id,
-            'student_id' => $attempt->student_id,
-            'concept_id' => $data['concept_id'],
-            'lesson_id' => $data['lesson_id'],
-            'source' => 'teacher',
-            'reason' => 'Ditambahkan oleh guru: '.$request->user()->name,
-            'status' => 'assigned',
-            'assigned_by' => $request->user()->id,
-            'note' => $data['note'] ?? null,
-            'assigned_at' => now(),
-        ]);
+        try {
+            $assignment = DB::transaction(fn () => RemediationAssignment::create([
+                'attempt_id' => $attempt->id,
+                'student_id' => $attempt->student_id,
+                'concept_id' => $data['concept_id'],
+                'lesson_id' => $data['lesson_id'],
+                'source' => 'teacher',
+                'reason' => 'Ditambahkan oleh guru: '.$request->user()->name,
+                'status' => 'assigned',
+                'assigned_by' => $request->user()->id,
+                'note' => $data['note'] ?? null,
+                'assigned_at' => now(),
+            ]));
+        } catch (UniqueConstraintViolationException) {
+            // Balapan: request lain menyisipkan baris yang sama setelah validasi lolos (UT-07).
+            throw ValidationException::withMessages(['lesson_id' => ['Materi ini sudah ditugaskan untuk konsep dan percobaan ini.']]);
+        }
 
         $percent = AttemptConceptResult::where('attempt_id', $attempt->id)
             ->where('concept_id', $assignment->concept_id)
