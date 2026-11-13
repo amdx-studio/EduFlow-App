@@ -1,11 +1,8 @@
-<script setup>
-import { computed } from 'vue';
+<script>
+// Blok biasa (bukan setup): berjalan SEKALI per modul, bukan per instans komponen.
+// Instans MarkdownIt dan hook DOMPurify (global) cukup dibuat satu kali (UT-05, OI-14).
 import DOMPurify from 'dompurify';
 import MarkdownIt from 'markdown-it';
-
-const props = defineProps({
-    source: { type: String, default: '' },
-});
 
 // HTML mentah dimatikan; hasil render tetap disanitasi (KT-02, bagian 10.5).
 const md = new MarkdownIt({ html: false, linkify: true, breaks: false });
@@ -15,6 +12,14 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
         node.setAttribute('target', '_blank');
         node.setAttribute('rel', 'noopener noreferrer');
     }
+});
+</script>
+
+<script setup>
+import { computed } from 'vue';
+
+const props = defineProps({
+    source: { type: String, default: '' },
 });
 
 const html = computed(() => DOMPurify.sanitize(md.render(props.source ?? '')));

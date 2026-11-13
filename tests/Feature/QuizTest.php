@@ -8,49 +8,14 @@ use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\BuildsAttemptData;
 use Tests\TestCase;
 
 class QuizTest extends TestCase
 {
+    use BuildsAttemptData;
     use RefreshDatabase;
-
-    private function signIn(User $user): void
-    {
-        // Guard sanctum menyimpan user antar request dalam satu test; reset agar pergantian user nyata.
-        $this->app['auth']->forgetGuards();
-        $this->actingAs($user, 'web');
-    }
-
-    private function teacher(): User
-    {
-        return User::factory()->create(['role' => 'teacher']);
-    }
-
-    private function student(): User
-    {
-        return User::factory()->create(['role' => 'student']);
-    }
-
-    private function course(User $teacher): Course
-    {
-        return Course::create([
-            'teacher_id' => $teacher->id,
-            'title' => 'Matematika',
-            'join_code' => Course::generateJoinCode(),
-        ])->refresh();
-    }
-
-    private function enroll(Course $course, User $student): void
-    {
-        $course->students()->attach($student->id, ['enrolled_at' => now()]);
-    }
-
-    private function concept(Course $course, string $name = 'Pecahan'): LearningConcept
-    {
-        return LearningConcept::create(['course_id' => $course->id, 'name' => $name]);
-    }
 
     private function quiz(Course $course, array $extra = []): Quiz
     {

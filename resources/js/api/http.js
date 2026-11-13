@@ -11,6 +11,7 @@ const http = axios.create({
 });
 
 let unauthorizedHandler = null;
+let forbiddenHandler = null;
 
 export function setUnauthorizedHandler(fn) {
     unauthorizedHandler = fn;
@@ -35,8 +36,17 @@ http.interceptors.response.use(
             unauthorizedHandler();
         }
 
+        // 403: bisa berarti sesi di tab ini sudah berganti akun. Pemanggil memeriksa ulang pengguna.
+        if (status === 403 && forbiddenHandler && url !== '/api/user') {
+            forbiddenHandler();
+        }
+
         return Promise.reject(error);
     },
 );
+
+export function setForbiddenHandler(fn) {
+    forbiddenHandler = fn;
+}
 
 export default http;

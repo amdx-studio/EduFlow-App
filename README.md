@@ -112,6 +112,8 @@ php artisan test
 
 Test hanya berjalan di schema `eduflow_test`. Bila koneksi default bukan `pgsql` atau `search_path` bukan `eduflow_test`, test dihentikan oleh pengaman di `tests/TestCase.php`; periksa `.env.testing`. Gunakan `php artisan test --filter=NamaTest` untuk menjalankan sebagian.
 
+Dua test (`SubmitRollbackTest`, `RaceConditionTest`) memakai `DatabaseTruncation`, bukan `RefreshDatabase`, karena membuktikan rollback dan balapan yang tidak dapat diuji di dalam pembungkus transaksi test. Setelah tiap test, trait `TruncatesAfterTest` mengosongkan **semua tabel** di schema `eduflow_test` (hanya PostgreSQL, memakai `pg_tables`). Itu aman karena pengaman di `tests/TestCase.php` membatasi test ke schema tersebut. Test balapan membuka koneksi kedua ke database yang sama.
+
 Format kode: `vendor/bin/pint --test` (tanpa `--test` untuk memperbaiki otomatis).
 
 ## 6. Jalankan aplikasi
@@ -129,7 +131,7 @@ Tidak ada seeder. Buat akun lewat halaman Daftar: satu akun guru (membuat kelas 
 
 ## Arsitektur singkat
 
-`routes/api.php` → Controller (tipis) → FormRequest (validasi) → Policy dan scope kepemilikan → Service (logika) → Model; respons lewat API Resource. Aturan penguasaan, remedial, gate asesmen ulang, perbandingan, dan dashboard hanya ada di `app/Services`. Frontend Vue ada di `resources/js` dan dilayani Laravel dari satu origin. Otorisasi selalu di server; tombol yang disembunyikan di UI bukan kontrol akses.
+`routes/api.php` → Controller (tipis) → FormRequest (validasi) → Policy dan scope kepemilikan → Service (logika) → Model; respons lewat API Resource. Aturan penguasaan, remedial, gate asesmen ulang, perbandingan, dan dashboard hanya ada di `app/Services`. Frontend Vue ada di `resources/js` dan dilayani Laravel dari satu origin. Otorisasi selalu di server; tombol yang disembunyikan di UI bukan kontrol akses. Pembatasan laju (429) didefinisikan di `AppServiceProvider`: `login`, `password-change`, `forum-write`, `register` (per IP) dan `join-course` (per pengguna); `register` dan `join-course` masing-masing 10 per menit.
 
 ## Menu kerja tim
 
@@ -140,6 +142,8 @@ Tidak ada seeder. Buat akun lewat halaman Daftar: satu akun guru (membuat kelas 
 ## Produksi
 
 Belum diputuskan (host dan database produksi masih terbuka). Perbedaan dari dev: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://<host>`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=<host>` (tanpa skema), `TEACHER_INVITE_CODE` terisi, password database yang kuat dan unik. `.env.migrate` tidak pernah dikirim ke server.
+
+Header keamanan dipasang middleware `SecurityHeaders` pada semua respons. `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, dan `Permissions-Policy` aktif di semua lingkungan. `Content-Security-Policy` hanya pada `APP_ENV=production` (saat `npm run dev`, Vite memuat skrip dari server lain dan menyisipkan gaya inline). `Strict-Transport-Security` hanya pada production dan permintaan HTTPS, `max-age=15552000` tanpa `includeSubDomains` dan `preload`. Di balik proxy hosting, HTTPS baru terdeteksi bila trusted proxies dikonfigurasi (belum ada di `bootstrap/app.php`; dicatat untuk Phase 10b).
 
 ## Masalah umum
 
