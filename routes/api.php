@@ -17,14 +17,7 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RemediationController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\ThreadController;
-use App\Models\Course;
-use App\Models\ForumPost;
-use App\Models\ForumThread;
-use App\Models\LearningConcept;
-use App\Models\Lesson;
-use App\Models\Question;
 use App\Models\Quiz;
-use App\Models\QuizAttempt;
 use Illuminate\Support\Facades\Route;
 
 // P10.1: id di URL harus angka dan muat di bigint (maks 18 digit); selain itu 404, bukan 500.
@@ -33,6 +26,7 @@ foreach (['course', 'concept', 'lesson', 'quiz', 'question', 'attempt', 'thread'
     Route::pattern($param, '[0-9]{1,18}');
 }
 
+// Route::bind (scope visibleTo) ada di AppServiceProvider: berkas ini tidak dijalankan saat route:cache aktif.
 // Autentikasi (API-02..05). API-01 (csrf-cookie) disediakan Sanctum.
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
@@ -43,13 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // --- Phase 4: Courses & Enrollment (API-06...12) ---
-Route::bind('course', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return Course::visibleTo($user)->findOrFail($value);
-});
-
 Route::middleware('auth:sanctum')->prefix('courses')->group(function () {
     Route::get('/', [CourseController::class, 'index']);
     Route::post('/', [CourseController::class, 'store'])->middleware('role:teacher');
@@ -61,25 +48,11 @@ Route::middleware('auth:sanctum')->prefix('courses')->group(function () {
 });
 
 // --- Phase 5: Concepts & Lessons ---
-Route::bind('concept', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return LearningConcept::visibleTo($user)->findOrFail($value);
-});
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('courses/{course}/concepts', [ConceptController::class, 'index']);
     Route::post('courses/{course}/concepts', [ConceptController::class, 'store'])->middleware('role:teacher');
     Route::put('concepts/{concept}', [ConceptController::class, 'update'])->middleware('role:teacher');
     Route::delete('concepts/{concept}', [ConceptController::class, 'destroy'])->middleware('role:teacher');
-});
-
-Route::bind('lesson', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return Lesson::visibleTo($user)->findOrFail($value);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -94,26 +67,12 @@ Route::post('lessons/{lesson}/complete', [LessonController::class, 'complete'])
     ->middleware(['auth:sanctum', 'role:student']);
 
 // --- Phase 6: Quiz Authoring ---
-Route::bind('quiz', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return Quiz::visibleTo($user)->findOrFail($value);
-});
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('courses/{course}/quizzes', [QuizController::class, 'index']);
     Route::post('courses/{course}/quizzes', [QuizController::class, 'store'])->middleware('role:teacher');
     Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('quizzes/{quiz}', [QuizController::class, 'update'])->middleware('role:teacher');
     Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy'])->middleware('role:teacher');
-});
-
-Route::bind('question', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return Question::whereHas('quiz', fn ($q) => $q->visibleTo($user))->findOrFail($value);
 });
 
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
@@ -126,13 +85,6 @@ Route::post('quizzes/{quiz}/publish', [QuizController::class, 'publish'])
     ->middleware(['auth:sanctum', 'role:teacher']);
 
 // --- Phase 7: Attempts, Scoring, Mastery (API-32..36) ---
-Route::bind('attempt', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return QuizAttempt::visibleTo($user)->findOrFail($value);
-});
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('quizzes/{quiz}/attempts', [AttemptController::class, 'store'])->middleware('role:student');
     Route::get('attempts/{attempt}', [AttemptController::class, 'show']);
@@ -163,20 +115,6 @@ Route::post('attempts/{attempt}/remediation', [RemediationController::class, 'st
 Route::get('home', [HomeController::class, 'show'])->middleware('auth:sanctum');
 
 // --- Phase 12: Forum diskusi kelas (API-43..50) ---
-Route::bind('thread', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return ForumThread::visibleTo($user)->findOrFail($value);
-});
-
-Route::bind('post', function ($value) {
-    $user = request()->user();
-    abort_unless($user, 401);
-
-    return ForumPost::visibleTo($user)->findOrFail($value);
-});
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('courses/{course}/threads', [ThreadController::class, 'index']);
     Route::post('courses/{course}/threads', [ThreadController::class, 'store'])->middleware('throttle:forum-write');
