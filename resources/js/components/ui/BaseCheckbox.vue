@@ -19,16 +19,37 @@ const inputAttrs = computed(() => {
 </script>
 
 <template>
-    <label class="inline-flex items-start gap-2 text-sm text-slate-900" :class="attrs.class" :style="attrs.style">
+    <!-- Area klik mencakup label (§6.2). Kotak 22 x 22, terpilih isi Samudra 700 dengan tanda putih. -->
+    <label class="inline-flex min-h-6 cursor-pointer items-start gap-3 text-body text-ink" :class="attrs.class" :style="attrs.style">
         <input
             v-model="model"
             v-bind="inputAttrs"
             type="checkbox"
             :value="value"
             :aria-invalid="invalid || undefined"
-            class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-brand-600 disabled:opacity-50"
-            :class="invalid ? 'border-danger-500' : ''"
+            class="ef-check mt-px shrink-0"
+            :class="invalid ? 'ef-check--invalid' : ''"
         />
-        <span><slot /></span>
+        <span class="min-w-0"><slot /></span>
     </label>
 </template>
+
+<style scoped>
+.ef-check {
+    appearance: none;
+    height: 22px;
+    width: 22px;
+    border: 1px solid var(--color-kapur-400);
+    border-radius: 6px;
+    background: #fff center / 14px 14px no-repeat;
+    cursor: pointer;
+}
+.ef-check:hover:not(:disabled) { border-color: var(--color-kapur-500); }
+.ef-check:checked {
+    border-color: var(--color-samudra-700);
+    background-color: var(--color-samudra-700);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 7.5l3 3 6-7'/%3E%3C/svg%3E");
+}
+.ef-check:disabled { opacity: 0.5; cursor: not-allowed; }
+.ef-check--invalid { border-color: var(--color-level-not-mastered-fill); }
+</style>

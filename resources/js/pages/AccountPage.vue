@@ -1,8 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import Badge from '../components/ui/Badge.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
 import BaseInput from '../components/ui/BaseInput.vue';
 import FormField from '../components/ui/FormField.vue';
 import PageHeader from '../components/ui/PageHeader.vue';
@@ -12,6 +13,7 @@ import { useToastStore } from '../stores/toast';
 
 const NAME_MAX = 100;
 
+const router = useRouter();
 const auth = useAuthStore();
 const toast = useToastStore();
 
@@ -72,47 +74,76 @@ async function savePassword() {
         savingPw.value = false;
     }
 }
+
+// Keluar (§7.19): sama dengan menu pengguna.
+const loggingOut = ref(false);
+async function logout() {
+    if (loggingOut.value) {
+        return;
+    }
+    loggingOut.value = true;
+    try {
+        await auth.logout();
+        toast.success('Anda telah keluar.');
+        await router.push({ name: 'login' });
+    } finally {
+        loggingOut.value = false;
+    }
+}
 </script>
 
 <template>
-    <section class="space-y-5">
-        <PageHeader title="Akun" description="Kelola nama dan password Anda." />
-
-        <BaseCard>
-            <form class="space-y-4" @submit.prevent="saveName">
-                <h2 class="font-semibold text-slate-900">Profil</h2>
-                <FormField label="Nama" required :hint="`${name.length}/${NAME_MAX} karakter`" :error="nameErrors.name?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
-                    <BaseInput :id="id" v-model="name" :aria-describedby="describedby" :invalid="invalid" :maxlength="NAME_MAX" autocomplete="name" required />
-                </FormField>
-                <FormField label="Email" v-slot="{ id }">
-                    <BaseInput :id="id" :model-value="auth.user?.email ?? ''" readonly disabled />
-                </FormField>
-                <div>
-                    <p class="block text-sm font-medium text-slate-900">Peran</p>
-                    <div class="mt-1"><Badge tone="brand">{{ roleLabel }}</Badge></div>
-                </div>
-                <BaseButton type="submit" :loading="savingName" :disabled="!nameChanged">
-                    {{ savingName ? 'Menyimpan...' : 'Simpan nama' }}
+    <section>
+        <PageHeader title="Akun" description="Kelola nama dan password Anda.">
+            <template #actions>
+                <BaseButton variant="secondary" :loading="loggingOut" @click="logout">
+                    <BaseIcon name="log-out" size="sm" />Keluar
                 </BaseButton>
-            </form>
-        </BaseCard>
+            </template>
+        </PageHeader>
 
-        <BaseCard>
-            <form class="space-y-4" @submit.prevent="savePassword">
-                <h2 class="font-semibold text-slate-900">Ganti password</h2>
-                <FormField label="Password saat ini" required :error="pwErrors.current_password?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
-                    <BaseInput :id="id" v-model="pw.current_password" type="password" :aria-describedby="describedby" :invalid="invalid" autocomplete="current-password" required />
-                </FormField>
-                <FormField label="Password baru" hint="Minimal 8 karakter, berbeda dari password saat ini." required :error="pwErrors.password?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
-                    <BaseInput :id="id" v-model="pw.password" type="password" :aria-describedby="describedby" :invalid="invalid" autocomplete="new-password" required />
-                </FormField>
-                <FormField label="Konfirmasi password baru" required :error="pwErrors.password_confirmation?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
-                    <BaseInput :id="id" v-model="pw.password_confirmation" type="password" :aria-describedby="describedby" :invalid="invalid" autocomplete="new-password" required />
-                </FormField>
-                <BaseButton type="submit" :loading="savingPw" :disabled="!canSavePw">
-                    {{ savingPw ? 'Menyimpan...' : 'Ganti password' }}
-                </BaseButton>
-            </form>
-        </BaseCard>
+        <div class="mt-8 max-w-160 space-y-12 lg:mt-10">
+            <section aria-labelledby="profil-title">
+                <h2 id="profil-title" class="font-serif text-h2 font-medium text-ink">Profil</h2>
+                <form class="mt-5 space-y-6" novalidate @submit.prevent="saveName">
+                    <FormField label="Nama" required :hint="`${name.length}/${NAME_MAX} karakter`" :error="nameErrors.name?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                        <BaseInput :id="id" v-model="name" :aria-describedby="describedby" :invalid="invalid" :maxlength="NAME_MAX" autocomplete="name" required />
+                    </FormField>
+                    <FormField label="Email" v-slot="{ id }">
+                        <BaseInput :id="id" :model-value="auth.user?.email ?? ''" readonly disabled />
+                    </FormField>
+                    <div>
+                        <p class="text-small font-semibold text-ink">Peran</p>
+                        <div class="mt-2"><Badge :tone="auth.isTeacher ? 'brand' : 'neutral'">{{ roleLabel }}</Badge></div>
+                        <p class="mt-2 text-caption text-kapur-500">Peran ditetapkan saat pendaftaran dan tidak dapat diubah.</p>
+                    </div>
+                    <div class="flex md:justify-end">
+                        <BaseButton type="submit" class="max-md:w-full" :loading="savingName" :disabled="!nameChanged">
+                            {{ savingName ? 'Menyimpan...' : 'Simpan nama' }}
+                        </BaseButton>
+                    </div>
+                </form>
+            </section>
+
+            <section aria-labelledby="password-title" class="border-t border-line pt-12">
+                <h2 id="password-title" class="font-serif text-h2 font-medium text-ink">Ganti password</h2>
+                <form class="mt-5 space-y-6" novalidate @submit.prevent="savePassword">
+                    <FormField label="Password saat ini" required :error="pwErrors.current_password?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                        <BaseInput :id="id" v-model="pw.current_password" type="password" :aria-describedby="describedby" :invalid="invalid" autocomplete="current-password" required />
+                    </FormField>
+                    <FormField label="Password baru" hint="Minimal 8 karakter, berbeda dari password saat ini." required :error="pwErrors.password?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                        <BaseInput :id="id" v-model="pw.password" type="password" :aria-describedby="describedby" :invalid="invalid" autocomplete="new-password" required />
+                    </FormField>
+                    <FormField label="Konfirmasi password baru" required :error="pwErrors.password_confirmation?.[0] ?? ''" v-slot="{ id, describedby, invalid }">
+                        <BaseInput :id="id" v-model="pw.password_confirmation" type="password" :aria-describedby="describedby" :invalid="invalid" autocomplete="new-password" required />
+                    </FormField>
+                    <div class="flex md:justify-end">
+                        <BaseButton type="submit" class="max-md:w-full" :loading="savingPw" :disabled="!canSavePw">
+                            {{ savingPw ? 'Menyimpan...' : 'Ganti password' }}
+                        </BaseButton>
+                    </div>
+                </form>
+            </section>
+        </div>
     </section>
 </template>

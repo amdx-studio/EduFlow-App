@@ -5,8 +5,8 @@ import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import Badge from '../components/ui/Badge.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import BaseCard from '../components/ui/BaseCard.vue';
 import BaseIcon from '../components/ui/BaseIcon.vue';
+import Dropdown from '../components/ui/Dropdown.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
 import InlineAlert from '../components/ui/InlineAlert.vue';
 import Skeleton from '../components/ui/Skeleton.vue';
@@ -23,8 +23,10 @@ const error = ref('');
 const deleting = ref(null);
 const deleteBusy = ref(false);
 
-function kindLabel(kind) {
-    return kind === 'reassessment' ? 'Asesmen ulang' : 'Asesmen';
+const rowItems = [{ key: 'delete', label: 'Hapus kuis', icon: 'trash', danger: true }];
+
+function isReassessment(quiz) {
+    return quiz.kind === 'reassessment';
 }
 
 function baseTitle(id) {
@@ -51,7 +53,7 @@ async function remove() {
         quizzes.value = quizzes.value.filter((q) => q.id !== deleting.value.id);
         toast.success('Kuis dihapus.');
     } catch (e) {
-        // 409 bila kuis sudah terbit atau sudah ada percobaan: pesan datang dari API.
+        // 409 bila kuis sudah terbit, sudah ada percobaan, atau dipakai asesmen ulang: pesan datang dari API.
         toast.error(errorMessage(e));
     } finally {
         deleteBusy.value = false;
@@ -65,19 +67,25 @@ watch(() => route.params.courseId, load);
 
 <template>
     <section>
-        <div class="mb-4">
-            <BaseButton :to="`/courses/${route.params.courseId}/quizzes/new`">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h2 class="font-serif text-h2 font-medium text-ink">Kuis</h2>
+                <p v-if="!loading && !error" class="text-caption text-kapur-500">{{ quizzes.length }} kuis</p>
+            </div>
+            <BaseButton class="max-md:w-full" :to="`/courses/${route.params.courseId}/quizzes/new`">
                 <BaseIcon name="plus" size="sm" />Buat kuis
             </BaseButton>
         </div>
 
-        <div v-if="loading" class="space-y-2" role="status" aria-busy="true">
-            <Skeleton class="h-20 w-full" />
-            <Skeleton class="h-20 w-full" />
+        <div v-if="loading" class="mt-4 border-t border-line" role="status" aria-busy="true">
+            <div v-for="n in 4" :key="n" class="flex min-h-18 items-center gap-4 border-b border-line py-4">
+                <div class="flex-1 space-y-2"><Skeleton class="h-4 w-1/3" /><Skeleton class="h-3 w-1/2" /></div>
+                <Skeleton class="h-7 w-16 !rounded-full" />
+            </div>
             <span class="sr-only">Memuat kuis...</span>
         </div>
 
-        <InlineAlert v-else-if="error" tone="danger" title="Kuis tidak dapat dimuat">
+        <InlineAlert v-else-if="error" class="mt-4" tone="danger" title="Kuis tidak dapat dimuat">
             {{ error }}
             <div class="mt-2">
                 <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
@@ -86,43 +94,63 @@ watch(() => route.params.courseId, load);
 
         <EmptyState
             v-else-if="quizzes.length === 0"
+            class="mt-4"
             title="Belum ada kuis"
-            description="Buat kuis pertama, lalu tambahkan soal yang bertaut ke konsep."
+            description="Buat kuis, lalu tautkan tiap soal ke satu konsep."
             icon="clipboard"
-        />
+        >
+            <BaseButton :to="`/courses/${route.params.courseId}/quizzes/new`">
+                <BaseIcon name="plus" size="sm" />Buat kuis
+            </BaseButton>
+        </EmptyState>
 
-        <ul v-else class="space-y-2">
-            <li v-for="quiz in quizzes" :key="quiz.id">
-                <BaseCard>
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
-                                class="font-semibold text-brand-700 hover:underline">
-                                {{ quiz.title }}
-                            </RouterLink>
-                            <div class="mt-2 flex flex-wrap items-center gap-2">
-                                <Badge :tone="quiz.status === 'published' ? 'success' : 'neutral'">
-                                    {{ quiz.status === 'published' ? 'Terbit' : 'Draf' }}
+        <ul v-else class="mt-4 border-t border-line">
+            <li v-for="quiz in quizzes" :key="quiz.id" class="border-b border-line">
+                <div class="flex min-h-18 items-center gap-2 py-4">
+                    <div class="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-6">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <RouterLink
+                                    :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
+                                    class="min-w-0 truncate text-h3 font-semibold text-samudra-600 hover:underline"
+                                >{{ quiz.title }}</RouterLink>
+                                <Badge :tone="isReassessment(quiz) ? 'remedial' : 'neutral'">
+                                    {{ isReassessment(quiz) ? 'Asesmen ulang' : 'Kuis dasar' }}
                                 </Badge>
-                                <Badge>{{ kindLabel(quiz.kind) }}</Badge>
-                                <span v-if="quiz.kind === 'reassessment'" class="text-xs text-slate-600">dasar: {{ baseTitle(quiz.base_quiz_id) }}</span>
-                                <span class="text-xs text-slate-600">{{ quiz.questions_count }} soal</span>
-                                <span class="text-xs text-slate-600">{{ quiz.attempts_count }} percobaan</span>
-                                <span class="text-xs text-slate-600">maks. {{ quiz.max_attempts }}x</span>
+                            </div>
+                            <div class="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-caption text-kapur-500">
+                                <span class="inline-flex items-center gap-1.5">
+                                    <BaseIcon name="clipboard" size="sm" />{{ quiz.questions_count }} soal
+                                </span>
+                                <span class="inline-flex items-center gap-1.5">
+                                    <BaseIcon name="check-circle" size="sm" />{{ quiz.attempts_count }} percobaan
+                                </span>
+                                <span>Maks. {{ quiz.max_attempts }}x</span>
+                                <span v-if="isReassessment(quiz)">Kuis dasar: {{ baseTitle(quiz.base_quiz_id) }}</span>
                             </div>
                         </div>
-                        <BaseButton v-if="quiz.status === 'draft'" variant="danger-outline" size="sm" @click="deleting = quiz">
-                            <BaseIcon name="trash" size="sm" />Hapus
-                        </BaseButton>
+                        <Badge :tone="quiz.status === 'published' ? 'success' : 'neutral'" class="self-start md:self-auto">
+                            {{ quiz.status === 'published' ? 'Terbit' : 'Draf' }}
+                        </Badge>
                     </div>
-                </BaseCard>
+                    <div class="w-11 shrink-0">
+                        <Dropdown
+                            v-if="quiz.status === 'draft'"
+                            icon="ellipsis"
+                            icon-only
+                            :label="`Tindakan untuk ${quiz.title}`"
+                            :items="rowItems"
+                            @select="deleting = quiz"
+                        />
+                    </div>
+                </div>
             </li>
         </ul>
 
         <ConfirmDialog
             :open="deleting !== null"
             title="Hapus kuis?"
-            :message="deleting ? `Kuis ${deleting.title} akan dihapus. Hanya kuis draf tanpa percobaan yang dapat dihapus.` : ''"
+            :message="deleting ? `Kuis ${deleting.title} dan semua soalnya akan dihapus. Hanya kuis draf tanpa percobaan yang dapat dihapus.` : ''"
             confirm-label="Ya, hapus"
             :busy="deleteBusy"
             @confirm="remove"

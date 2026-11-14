@@ -47,8 +47,8 @@ defineExpose({ reset });
             <BaseTextarea :id="id" v-model="body" :aria-describedby="describedby" :invalid="invalid" :rows="4" :maxlength="BODY_MAX" required />
         </FormField>
 
-        <div v-if="showPreview" class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <MarkdownView :source="body" />
+        <div v-if="showPreview" class="rounded-tile bg-well p-4">
+            <MarkdownView :source="body" variant="compact" />
         </div>
 
         <div class="flex flex-wrap gap-2">

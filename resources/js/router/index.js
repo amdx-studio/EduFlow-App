@@ -66,7 +66,7 @@ const router = createRouter({
                     ],
                 },
                 { path: 'attempts/:attemptId/result', name: 'attempt-result', component: AttemptResultPage },
-                { path: 'attempts/:attemptId', name: 'attempt', component: AttemptPage, meta: { roles: ['student'] } },
+                { path: 'attempts/:attemptId', name: 'attempt', component: AttemptPage, meta: { roles: ['student'], layout: 'exam' } },
                 { path: 'forbidden', name: 'forbidden', component: ForbiddenPage },
                 // Contoh rute berperan (dipakai di fase berikutnya):
                 // { path: 'teacher/...', meta: { roles: ['teacher'] }, ... }

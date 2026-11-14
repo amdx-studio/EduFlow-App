@@ -6,7 +6,7 @@
     <title>EduFlow</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-samudra-900 text-ink">
     <div id="app"></div>
 </body>
 </html>

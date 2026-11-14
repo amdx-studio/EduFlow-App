@@ -5,7 +5,6 @@ import http from '../api/http';
 import ForumThreadRow from '../components/ForumThreadRow.vue';
 import ThreadForm from '../components/ThreadForm.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import BaseCard from '../components/ui/BaseCard.vue';
 import BaseIcon from '../components/ui/BaseIcon.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
 import InlineAlert from '../components/ui/InlineAlert.vue';
@@ -99,26 +98,34 @@ watch(() => route.params.courseId, load);
 
 <template>
     <section>
-        <InlineAlert v-if="archived" tone="info" class="mb-4">Kelas diarsipkan. Forum hanya dapat dibaca.</InlineAlert>
-        <div v-else-if="!showForm" class="mb-4">
-            <BaseButton @click="showForm = true"><BaseIcon name="plus" size="sm" />Utas baru</BaseButton>
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h2 class="font-serif text-h2 font-medium text-ink">Forum</h2>
+                <p v-if="!loading && !error" class="text-caption text-kapur-500">{{ pinned.length + threads.length }} utas{{ hasMore ? ' dimuat' : '' }}</p>
+            </div>
+            <BaseButton v-if="!archived && !showForm" class="max-md:w-full" @click="showForm = true">
+                <BaseIcon name="plus" size="sm" />Utas baru
+            </BaseButton>
         </div>
 
-        <BaseCard v-if="showForm && !archived" class="mb-4">
-            <h2 class="text-lg font-semibold text-slate-900">Utas baru</h2>
-            <div class="mt-3">
+        <InlineAlert v-if="archived" tone="info" class="mt-4">Kelas diarsipkan. Forum hanya dapat dibaca.</InlineAlert>
+
+        <div v-if="showForm && !archived" class="mt-6 rounded-tile bg-well p-5 md:p-6">
+            <h3 class="font-serif text-h2 font-medium text-ink">Utas baru</h3>
+            <div class="mt-5">
                 <ThreadForm submit-label="Buat utas" :saving="creating" :errors="formErrors" @submit="create" @cancel="closeForm" />
             </div>
-        </BaseCard>
+        </div>
 
-        <div v-if="loading" class="space-y-2" role="status" aria-busy="true">
-            <Skeleton class="h-20 w-full" />
-            <Skeleton class="h-20 w-full" />
-            <Skeleton class="h-20 w-full" />
+        <div v-if="loading" class="mt-4 border-t border-line" role="status" aria-busy="true">
+            <div v-for="n in 4" :key="n" class="flex min-h-18 items-center gap-4 border-b border-line py-4">
+                <Skeleton class="h-10 w-10 !rounded-full max-md:hidden" />
+                <div class="flex-1 space-y-2"><Skeleton class="h-4 w-1/2" /><Skeleton class="h-3 w-1/3" /></div>
+            </div>
             <span class="sr-only">Memuat forum...</span>
         </div>
 
-        <InlineAlert v-else-if="error" tone="danger" title="Forum tidak dapat dimuat">
+        <InlineAlert v-else-if="error" tone="danger" class="mt-4" title="Forum tidak dapat dimuat">
             {{ error }}
             <div class="mt-2">
                 <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
@@ -127,31 +134,36 @@ watch(() => route.params.courseId, load);
 
         <EmptyState
             v-else-if="pinned.length === 0 && threads.length === 0"
+            class="mt-4"
             title="Belum ada utas"
             :description="archived ? 'Belum ada diskusi di kelas ini.' : 'Mulai diskusi dengan membuat utas pertama.'"
             icon="clipboard"
-        />
+        >
+            <BaseButton v-if="!archived && !showForm" @click="showForm = true">
+                <BaseIcon name="plus" size="sm" />Utas baru
+            </BaseButton>
+        </EmptyState>
 
         <template v-else>
-            <section v-if="pinned.length" aria-labelledby="pinned-heading" class="mb-6">
-                <h2 id="pinned-heading" class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">Disematkan</h2>
-                <ul class="space-y-2">
-                    <li v-for="thread in pinned" :key="thread.id">
+            <section v-if="pinned.length" aria-labelledby="pinned-heading" class="mt-8">
+                <h3 id="pinned-heading" class="text-h3 font-semibold text-ink">Disematkan</h3>
+                <ul class="mt-3 border-t border-line">
+                    <li v-for="thread in pinned" :key="thread.id" class="border-b border-line">
                         <ForumThreadRow :thread="thread" :course-id="route.params.courseId" />
                     </li>
                 </ul>
             </section>
 
-            <section aria-labelledby="threads-heading">
-                <h2 v-if="pinned.length" id="threads-heading" class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">Semua utas</h2>
-                <ul class="space-y-2">
-                    <li v-for="thread in threads" :key="thread.id">
+            <section aria-labelledby="threads-heading" class="mt-8">
+                <h3 id="threads-heading" class="text-h3 font-semibold text-ink" :class="{ 'sr-only': !pinned.length }">Semua utas</h3>
+                <ul class="border-t border-line" :class="pinned.length ? 'mt-3' : 'mt-0'">
+                    <li v-for="thread in threads" :key="thread.id" class="border-b border-line">
                         <ForumThreadRow :thread="thread" :course-id="route.params.courseId" />
                     </li>
                 </ul>
             </section>
 
-            <div v-if="hasMore" class="mt-4 flex justify-center">
+            <div v-if="hasMore" class="mt-6 flex justify-center">
                 <BaseButton variant="secondary" :loading="loadingMore" @click="loadMore">
                     {{ loadingMore ? 'Memuat...' : 'Muat lebih banyak' }}
                 </BaseButton>

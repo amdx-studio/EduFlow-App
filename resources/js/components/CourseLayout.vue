@@ -1,14 +1,16 @@
 <script setup>
-import { computed, onMounted, provide, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import http from '../api/http';
 import { errorMessage } from '../lib/errors';
 import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
+import { activeCourse, courseNavItems } from '../composables/useShell';
 import ConfirmDialog from './ConfirmDialog.vue';
 import Badge from './ui/Badge.vue';
 import BaseButton from './ui/BaseButton.vue';
 import CopyButton from './ui/CopyButton.vue';
+import Dropdown from './ui/Dropdown.vue';
 import EmptyState from './ui/EmptyState.vue';
 import InlineAlert from './ui/InlineAlert.vue';
 import PageHeader from './ui/PageHeader.vue';
@@ -28,32 +30,23 @@ const notFound = ref(false);
 const confirmArchive = ref(false);
 const archiving = ref(false);
 
-const tabs = computed(() => {
-    if (!course.value) {
-        return [];
-    }
-    const base = `/courses/${course.value.id}`;
-    const list = [
-        { key: 'lessons', label: 'Materi', to: `${base}/lessons`, alsoActive: ['lesson-new', 'lesson-edit', 'lesson-read'] },
-    ];
-    if (auth.isTeacher) {
-        list.push({ key: 'concepts', label: 'Konsep', to: `${base}/concepts` });
-    }
-    list.push({
-        key: 'quizzes',
-        label: 'Kuis',
-        to: `${base}/quizzes`,
-        alsoActive: ['quiz-new', 'quiz-builder', 'quiz-comparison'],
-    });
-    if (auth.isStudent) {
-        list.push({ key: 'remediation', label: 'Remedial Saya', to: `${base}/remediation` });
-    }
-    if (auth.isTeacher) {
-        list.push({ key: 'students', label: 'Siswa', to: `${base}/students`, alsoActive: ['student-detail'] });
-        list.push({ key: 'dashboard', label: 'Dashboard', to: `${base}/dashboard` });
-    }
-    list.push({ key: 'forum', label: 'Forum', to: `${base}/forum`, alsoActive: ['forum-thread'] });
-    return list;
+const ALSO = {
+    lessons: ['lesson-new', 'lesson-edit', 'lesson-read'],
+    quizzes: ['quiz-new', 'quiz-builder', 'quiz-comparison'],
+    students: ['student-detail'],
+    forum: ['forum-thread'],
+};
+const tabs = computed(() =>
+    courseNavItems(course.value, auth.user?.role).map((item) => ({ ...item, alsoActive: ALSO[item.key] })),
+);
+const manageItems = [{ key: 'archive', label: 'Arsipkan kelas', icon: 'archive' }];
+
+// Sidebar (AppShell) membaca kelas aktif dari keadaan bersama.
+watch(course, (value) => {
+    activeCourse.value = value;
+}, { immediate: true });
+onBeforeUnmount(() => {
+    activeCourse.value = null;
 });
 
 async function load() {
@@ -121,24 +114,24 @@ watch(() => route.params.courseId, load);
                 :breadcrumbs="[{ label: 'Kelas', to: { name: 'courses' } }, { label: course.title }]"
             >
                 <template #meta>
-                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+                    <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-kapur-600">
                         <Badge v-if="course.is_archived">Arsip</Badge>
-                        <span v-if="auth.isTeacher" class="flex flex-wrap items-center gap-2">
+                        <span v-if="auth.isTeacher" class="flex flex-wrap items-center gap-2 md:hidden">
                             Kode gabung:
-                            <code class="rounded bg-slate-100 px-2 py-1 font-mono font-semibold tracking-wider text-slate-900">{{ course.join_code }}</code>
+                            <code class="rounded-code bg-kapur-50 px-2 py-1 font-mono font-medium tracking-[0.08em] text-ink">{{ course.join_code }}</code>
                             <CopyButton :value="course.join_code" />
                         </span>
                         <span v-else>Guru: {{ course.teacher_name }}</span>
                     </div>
                 </template>
                 <template v-if="auth.isTeacher && !course.is_archived" #actions>
-                    <BaseButton variant="secondary" class="print:hidden" @click="confirmArchive = true">Arsipkan kelas</BaseButton>
+                    <span class="print:hidden"><Dropdown label="Kelola kelas" icon="ellipsis" :items="manageItems" @select="confirmArchive = true" /></span>
                 </template>
             </PageHeader>
 
-            <TabNav class="mt-4 print:hidden" :tabs="tabs" label="Tab kelas" />
+            <TabNav class="mt-6 lg:hidden print:hidden" :tabs="tabs" label="Tab kelas" />
 
-            <div class="mt-4">
+            <div class="mt-8 lg:mt-10">
                 <RouterView />
             </div>
 

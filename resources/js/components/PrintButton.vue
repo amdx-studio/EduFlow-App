@@ -8,7 +8,7 @@ function print() {
 </script>
 
 <template>
-    <BaseButton variant="secondary" size="sm" class="print:hidden" @click="print">
-        <BaseIcon name="printer" size="sm" />Cetak
+    <BaseButton variant="secondary" class="print:hidden" aria-label="Cetak" @click="print">
+        <BaseIcon name="printer" size="sm" /><span class="max-sm:sr-only">Cetak</span>
     </BaseButton>
 </template>

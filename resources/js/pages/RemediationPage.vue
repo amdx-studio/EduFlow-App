@@ -5,7 +5,7 @@ import http from '../api/http';
 import RemediationCard from '../components/RemediationCard.vue';
 import Badge from '../components/ui/Badge.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import BaseCard from '../components/ui/BaseCard.vue';
+import BaseIcon from '../components/ui/BaseIcon.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
 import InlineAlert from '../components/ui/InlineAlert.vue';
 import Skeleton from '../components/ui/Skeleton.vue';
@@ -66,7 +66,8 @@ async function complete(item) {
     busyLesson.value = item.lesson.id;
     try {
         const { data } = await http.post(`/api/lessons/${item.lesson.id}/complete`);
-        toast.success(data.data.assignments_completed > 0 ? 'Remedial ditandai selesai.' : 'Materi sudah tercatat selesai.');
+        const n = data.data.assignments_completed;
+        toast.success(n > 0 ? `Materi ditandai selesai. ${n} tugas remedial diperbarui.` : 'Materi ditandai selesai.');
         // KT-11: satu materi dapat menyelesaikan beberapa assignment, jadi muat ulang seluruh daftar.
         await load(false);
     } catch (e) {
@@ -86,66 +87,73 @@ watch(() => route.params.courseId, () => load());
 
 <template>
     <section>
-        <div v-if="loading" class="space-y-3" role="status" aria-busy="true">
-            <Skeleton class="h-5 w-48" />
-            <Skeleton class="h-40 w-full" />
+        <h2 class="font-serif text-h2 font-medium text-ink">Remedial Saya</h2>
+        <p v-if="!loading && !error && items.length" class="mt-1 text-body text-kapur-600">
+            {{ pendingCount }} dari {{ items.length }} materi belum selesai.
+        </p>
+
+        <div v-if="loading" class="mt-6 space-y-8" role="status" aria-busy="true">
+            <div v-for="n in 2" :key="n" class="space-y-3">
+                <Skeleton class="h-6 w-40" />
+                <Skeleton class="h-28 w-full" />
+            </div>
             <span class="sr-only">Memuat remedial...</span>
         </div>
 
-        <InlineAlert v-else-if="error" tone="danger" title="Remedial tidak dapat dimuat">
+        <InlineAlert v-else-if="error" class="mt-6" tone="danger" title="Remedial tidak dapat dimuat">
             {{ error }}
-            <div class="mt-2">
-                <BaseButton variant="secondary" size="sm" @click="load()">Coba lagi</BaseButton>
-            </div>
+            <div class="mt-2"><BaseButton variant="secondary" size="sm" @click="load()">Coba lagi</BaseButton></div>
         </InlineAlert>
 
         <EmptyState
             v-else-if="items.length === 0"
+            class="mt-6"
             title="Belum ada remedial"
-            description="Remedial muncul setelah Anda mengerjakan kuis dan ada konsep yang perlu diperkuat."
+            description="Remedial muncul setelah Anda mengerjakan kuis dasar dan ada konsep yang belum dikuasai."
             icon="book-open"
-        />
+        >
+            <BaseButton variant="secondary" :to="`/courses/${route.params.courseId}/quizzes`">Lihat kuis</BaseButton>
+        </EmptyState>
 
-        <div v-else class="space-y-5">
-            <p class="text-sm text-slate-600">
-                {{ pendingCount }} dari {{ items.length }} remedial belum selesai.
-            </p>
-            <BaseCard v-for="group in groups" :key="group.key">
-                <h2 class="text-lg font-semibold">{{ group.concept }}</h2>
-                <ul class="mt-3 space-y-3">
+        <div v-else class="mt-8 space-y-10">
+            <section v-for="group in groups" :key="group.key" :aria-label="group.concept">
+                <div class="flex items-baseline gap-3">
+                    <h3 class="text-h3 font-semibold text-ink">{{ group.concept }}</h3>
+                    <span class="text-caption text-kapur-500">{{ group.items.length }} materi</span>
+                </div>
+                <ul class="mt-4 space-y-5">
                     <li v-for="item in group.items" :key="item.id">
                         <RemediationCard
                             :item="item"
                             :course-id="route.params.courseId"
-                            :percent="item.mastery_percent"
                             :show-concept="false"
                             can-complete
                             :busy="busyLesson === item.lesson.id"
                             @complete="complete" />
                     </li>
                 </ul>
-            </BaseCard>
+            </section>
         </div>
 
-        <BaseCard v-if="!loading && !error && reassessments.length" class="mt-5">
-            <h2 class="text-lg font-semibold">Asesmen ulang</h2>
-            <ul class="mt-3 space-y-3">
-                <li v-for="quiz in reassessments" :key="quiz.id" class="rounded-lg border border-slate-200 p-4">
-                    <RouterLink :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
-                        class="font-medium text-brand-700 hover:underline">
-                        {{ quiz.title }}
-                    </RouterLink>
-                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge :tone="quiz.gate?.status === 'available' ? 'success' : 'warning'">
-                            {{ quiz.gate?.status === 'available' ? 'Tersedia' : 'Terkunci' }}
-                        </Badge>
-                        <span v-if="quiz.gate?.status === 'locked'" class="text-xs text-slate-600">{{ quiz.gate.reason }}</span>
-                        <span v-if="quiz.gate?.pending?.length" class="text-xs text-slate-600">
-                            {{ quiz.gate.pending.length }} remedial belum selesai
-                        </span>
+        <section v-if="!loading && !error && reassessments.length" class="mt-12" aria-label="Asesmen ulang">
+            <h2 class="font-serif text-h2 font-medium text-ink">Asesmen ulang</h2>
+            <ul class="mt-4 border-t border-line">
+                <li v-for="quiz in reassessments" :key="quiz.id" class="flex flex-wrap items-center justify-between gap-3 border-b border-line py-4">
+                    <div class="min-w-0">
+                        <p class="text-h3 font-semibold text-ink">{{ quiz.title }}</p>
+                        <p v-if="quiz.gate?.status === 'locked'" class="mt-1 flex items-center gap-2 text-small text-kapur-600">
+                            <BaseIcon name="lock" size="sm" />{{ quiz.gate.reason }}
+                            <span v-if="quiz.gate?.pending?.length">({{ quiz.gate.pending.length }} remedial belum selesai)</span>
+                        </p>
                     </div>
+                    <RouterLink
+                        v-if="quiz.gate?.status === 'available'"
+                        :to="`/courses/${route.params.courseId}/quizzes/${quiz.id}`"
+                        class="text-small font-semibold text-samudra-600 underline hover:text-samudra-800"
+                    >Buka kuis</RouterLink>
+                    <Badge v-else tone="neutral">Terkunci</Badge>
                 </li>
             </ul>
-        </BaseCard>
+        </section>
     </section>
 </template>

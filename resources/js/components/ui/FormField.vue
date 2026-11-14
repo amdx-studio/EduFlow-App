@@ -22,14 +22,14 @@ const invalid = computed(() => props.error !== '');
 
 <template>
     <div>
-        <label :for="fieldId" class="block text-sm font-medium text-slate-900">
+        <label :for="fieldId" class="block text-small font-semibold text-ink">
             {{ label }}
-            <span v-if="required" class="text-danger-700" aria-hidden="true">*</span>
+            <span v-if="required" class="text-level-not-mastered-text" aria-hidden="true">*</span>
         </label>
-        <p v-if="hint" :id="hintId" class="mt-0.5 text-sm text-slate-600">{{ hint }}</p>
-        <div class="mt-1">
+        <p v-if="hint" :id="hintId" class="mt-1 text-caption text-kapur-500">{{ hint }}</p>
+        <div class="mt-2">
             <slot :id="fieldId" :describedby="describedby" :invalid="invalid" />
         </div>
-        <p v-if="error" :id="errorId" class="mt-1 text-sm text-danger-700" role="alert">{{ error }}</p>
+        <p v-if="error" :id="errorId" class="mt-2 text-caption text-level-not-mastered-text" role="alert">{{ error }}</p>
     </div>
 </template>
