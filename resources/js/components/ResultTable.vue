@@ -1,46 +1,34 @@
 <script setup>
-import { computed } from 'vue';
-import LevelBadge from './LevelBadge.vue';
 import MasteryBar from './MasteryBar.vue';
-import DataTable from './ui/DataTable.vue';
 
-const props = defineProps({
+// Penguasaan per konsep sebagai ledger (§7.13): nama, "n dari m benar", Skala berzona, persen, glyph + level.
+defineProps({
     concepts: { type: Array, default: () => [] },
 });
-
-const thresholds = computed(() => props.concepts[0] ?? null);
-const hasInsufficient = computed(() => props.concepts.some((c) => c.level === 'insufficient'));
 </script>
 
 <template>
     <div>
-        <DataTable label="Hasil per konsep" caption="Hasil per konsep pada percobaan ini">
-            <thead>
-                <tr>
-                    <th scope="col">Konsep</th>
-                    <th scope="col">Benar</th>
-                    <th scope="col">Penguasaan</th>
-                    <th scope="col">Level</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="concept in concepts" :key="concept.concept_id">
-                    <td class="font-medium">{{ concept.concept }}</td>
-                    <td class="whitespace-nowrap">{{ concept.correct }} dari {{ concept.total }} soal</td>
-                    <td>
-                        <MasteryBar :percent="concept.percent" :level="concept.level" :label="`Penguasaan ${concept.concept}`" />
-                    </td>
-                    <td><LevelBadge :level="concept.level" /></td>
-                </tr>
-            </tbody>
-        </DataTable>
-
-        <p v-if="thresholds" class="mt-3 text-xs text-slate-600">
-            Ambang saat percobaan ini: dikuasai mulai {{ thresholds.mastery_threshold_used }}%,
-            berkembang mulai {{ thresholds.weak_threshold_used }}%.
-        </p>
-        <p v-if="hasInsufficient" class="mt-1 text-xs text-slate-600">
-            &quot;Data kurang&quot; berarti jumlah soal pada konsep itu belum cukup untuk menilai penguasaan.
+        <ul class="divide-y divide-line border-y border-line" aria-label="Penguasaan per konsep">
+            <li v-for="(concept, i) in concepts" :key="concept.concept_id" class="grid gap-3 py-5 md:grid-cols-[11rem_1fr] md:items-center md:gap-6">
+                <div>
+                    <p class="text-small font-semibold text-ink">{{ concept.concept }}</p>
+                    <p class="text-caption text-kapur-500">{{ concept.correct }} dari {{ concept.total }} benar</p>
+                </div>
+                <MasteryBar
+                    :percent="Number(concept.percent)"
+                    :level="concept.level"
+                    :label="`Penguasaan ${concept.concept}`"
+                    :weak-threshold="concept.weak_threshold_used ?? null"
+                    :mastery-threshold="concept.mastery_threshold_used ?? null"
+                    :threshold-labels="i === 0"
+                    size="lg"
+                    animate
+                />
+            </li>
+        </ul>
+        <p v-if="concepts.some((c) => c.level === 'insufficient')" class="mt-3 text-caption text-kapur-500">
+            "Data kurang" berarti jumlah soal pada konsep itu belum cukup untuk menilai penguasaan.
         </p>
     </div>
 </template>

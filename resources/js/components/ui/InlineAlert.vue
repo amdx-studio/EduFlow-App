@@ -8,10 +8,10 @@ const props = defineProps({
 });
 
 const TONES = {
-    info: { box: 'border-info-200 bg-info-50 text-info-900', icon: 'info' },
-    success: { box: 'border-success-200 bg-success-50 text-success-900', icon: 'check-circle' },
-    warning: { box: 'border-warning-200 bg-warning-50 text-warning-900', icon: 'alert-triangle' },
-    danger: { box: 'border-danger-200 bg-danger-50 text-danger-900', icon: 'alert-triangle' },
+    info: { box: 'border-info-border bg-info-tint text-info-text', icon: 'info' },
+    success: { box: 'border-level-mastered-border bg-level-mastered-tint text-level-mastered-text', icon: 'check-circle' },
+    warning: { box: 'border-level-developing-border bg-level-developing-tint text-level-developing-text', icon: 'alert-triangle' },
+    danger: { box: 'border-level-not-mastered-border bg-level-not-mastered-tint text-level-not-mastered-text', icon: 'alert-triangle' },
 };
 
 const meta = computed(() => TONES[props.tone] ?? TONES.info);
@@ -19,7 +19,7 @@ const role = computed(() => (props.tone === 'danger' || props.tone === 'warning'
 </script>
 
 <template>
-    <div class="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm" :class="meta.box" :role="role">
+    <div class="flex items-start gap-3 rounded-control border px-4 py-3 text-small" :class="meta.box" :role="role">
         <BaseIcon :name="meta.icon" class="mt-0.5" />
         <div class="min-w-0">
             <p v-if="title" class="font-semibold">{{ title }}</p>

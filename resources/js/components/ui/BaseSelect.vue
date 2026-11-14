@@ -10,8 +10,8 @@ defineProps({
     <select
         v-model="model"
         :aria-invalid="invalid || undefined"
-        class="block min-h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-500"
-        :class="invalid ? 'border-danger-500' : 'border-slate-300'"
+        class="block min-h-12 w-full rounded-control border bg-white px-4 py-2 text-body text-ink disabled:bg-kapur-100 disabled:text-kapur-500"
+        :class="invalid ? 'border-level-not-mastered-fill' : 'border-line-control'"
     >
         <slot />
     </select>

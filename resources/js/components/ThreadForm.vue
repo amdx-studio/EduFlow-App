@@ -63,9 +63,9 @@ function submit() {
                 />
             </FormField>
             <div>
-                <p class="block text-sm font-medium text-slate-900">Pratinjau</p>
-                <div class="mt-1 min-h-40 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <MarkdownView :source="form.body" />
+                <p class="block text-small font-semibold text-ink">Pratinjau</p>
+                <div class="mt-2 min-h-40 rounded-tile bg-well p-4">
+                    <MarkdownView :source="form.body" variant="compact" />
                 </div>
             </div>
         </div>

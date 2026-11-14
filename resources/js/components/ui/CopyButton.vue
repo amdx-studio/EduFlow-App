@@ -30,7 +30,7 @@ onBeforeUnmount(() => clearTimeout(timer));
     <span class="inline-flex">
         <button
             type="button"
-            class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            class="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line-control bg-white px-3 py-1.5 text-caption font-semibold text-ink hover:bg-kapur-100"
             @click="copy"
         >
             <BaseIcon :name="state === 'done' ? 'check' : 'copy'" size="sm" />

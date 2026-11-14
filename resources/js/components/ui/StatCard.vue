@@ -1,6 +1,5 @@
 <script setup>
-import BaseCard from './BaseCard.vue';
-
+// Baris angka tipografis (K-5, AL-9): angka serif besar dengan label kecil, tanpa kotak.
 defineProps({
     label: { type: String, required: true },
     value: { type: [String, Number], required: true },
@@ -9,9 +8,9 @@ defineProps({
 </script>
 
 <template>
-    <BaseCard>
-        <p class="text-sm text-slate-600">{{ label }}</p>
-        <p class="mt-1 text-2xl font-semibold text-slate-900">{{ value }}</p>
-        <p v-if="hint" class="text-xs text-slate-500">{{ hint }}</p>
-    </BaseCard>
+    <div>
+        <p class="font-serif text-num-l font-medium tracking-[-0.015em] text-ink tabular-nums">{{ value }}</p>
+        <p class="mt-1 text-small font-semibold text-kapur-600">{{ label }}</p>
+        <p v-if="hint" class="text-caption text-kapur-500">{{ hint }}</p>
+    </div>
 </template>

@@ -9,6 +9,8 @@ const props = defineProps({
     align: { type: String, default: 'right' },
     icon: { type: String, default: '' },
     collapseLabel: { type: Boolean, default: false },
+    // Tombol hanya-ikon (§6.1): label menjadi aria-label, tanpa teks dan panah.
+    iconOnly: { type: Boolean, default: false },
 });
 const emit = defineEmits(['select']);
 
@@ -103,8 +105,8 @@ watch(open, (isOpen) => {
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
 
 const itemClass = (item) =>
-    `flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 focus:bg-slate-100 -outline-offset-2 ${
-        item.danger ? 'text-danger-700' : 'text-slate-700'
+    `flex w-full items-center gap-2 px-3 py-2 text-left text-small hover:bg-kapur-100 focus:bg-kapur-100 -outline-offset-2 ${
+        item.danger ? 'text-level-not-mastered-text' : 'text-ink'
     }`;
 </script>
 
@@ -113,24 +115,25 @@ const itemClass = (item) =>
         <button
             ref="trigger"
             type="button"
-            class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            class="inline-flex items-center gap-2 rounded-control text-small font-semibold text-ink hover:bg-kapur-100"
+            :class="iconOnly ? 'h-11 w-11 justify-center text-kapur-600' : 'min-h-10 border border-line-control bg-white px-3 py-2'"
             aria-haspopup="menu"
-            :aria-label="collapseLabel ? label : undefined"
+            :aria-label="collapseLabel || iconOnly ? label : undefined"
             :aria-expanded="open"
             :aria-controls="open ? menuId : undefined"
             @click="toggle"
             @keydown="onTriggerKey"
         >
             <BaseIcon v-if="icon" :name="icon" size="sm" />
-            <span class="max-w-40 truncate" :class="{ 'hidden sm:inline': collapseLabel }">{{ label }}</span>
-            <BaseIcon name="chevron-down" size="sm" />
+            <span v-if="!iconOnly" class="max-w-40 truncate" :class="{ 'hidden sm:inline': collapseLabel }">{{ label }}</span>
+            <BaseIcon v-if="!iconOnly" name="chevron-down" size="sm" />
         </button>
         <div
             v-if="open"
             :id="menuId"
             ref="menu"
             role="menu"
-            class="absolute z-30 mt-1 min-w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+            class="absolute z-30 mt-1 min-w-48 rounded-control bg-white py-1 shadow-popover"
             :class="align === 'right' ? 'right-0' : 'left-0'"
             @keydown="onMenuKey"
         >

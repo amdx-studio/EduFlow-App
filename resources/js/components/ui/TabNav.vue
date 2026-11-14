@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 
+// Tab pil horizontal (§5.4): dipakai di tablet dan mobile; di desktop navigasi kelas ada di sidebar.
 defineProps({
     tabs: { type: Array, required: true },
     label: { type: String, default: 'Tab' },
@@ -14,7 +15,7 @@ const route = useRoute();
 const isOn = (tab, isActive) => isActive || (tab.alsoActive?.includes(route.name) ?? false);
 
 function reveal() {
-    nav.value?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    nav.value?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
 }
 
 onMounted(reveal);
@@ -22,7 +23,7 @@ watch(() => route.fullPath, () => nextTick(reveal));
 </script>
 
 <template>
-    <nav ref="nav" :aria-label="label" class="flex overflow-x-auto border-b border-slate-200">
+    <nav ref="nav" :aria-label="label" class="scroll-hidden flex snap-x gap-2 overflow-x-auto">
         <RouterLink
             v-for="tab in tabs"
             :key="tab.key ?? tab.label"
@@ -32,8 +33,8 @@ watch(() => route.fullPath, () => nextTick(reveal));
         >
             <a
                 :href="href"
-                class="shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150"
-                :class="isOn(tab, isActive) ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-600 hover:text-brand-700'"
+                class="inline-flex h-10 shrink-0 snap-start items-center rounded-full px-4 text-small font-semibold transition-colors duration-120"
+                :class="isOn(tab, isActive) ? 'bg-samudra-700 text-white' : 'text-kapur-600 hover:bg-kapur-100'"
                 :aria-current="isOn(tab, isActive) ? 'page' : undefined"
                 @click="navigate"
             >

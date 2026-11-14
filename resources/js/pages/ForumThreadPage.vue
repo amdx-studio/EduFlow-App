@@ -1,6 +1,6 @@
 <script setup>
 import { computed, inject, onMounted, ref, watch } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import http from '../api/http';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import MarkdownView from '../components/MarkdownView.vue';
@@ -8,7 +8,9 @@ import PostForm from '../components/PostForm.vue';
 import ThreadForm from '../components/ThreadForm.vue';
 import Badge from '../components/ui/Badge.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import BaseCard from '../components/ui/BaseCard.vue';
+import Avatar from '../components/domain/Avatar.vue';
+import Dropdown from '../components/ui/Dropdown.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
 import BaseIcon from '../components/ui/BaseIcon.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
 import InlineAlert from '../components/ui/InlineAlert.vue';
@@ -257,130 +259,152 @@ async function runPending() {
     }
 }
 
+// Menu "Kelola utas" (§K-8): aksi merusak tidak menjadi tombol mandiri di header.
+const manageItems = computed(() => {
+    const items = [];
+    if (canEditThread.value) {
+        items.push({ key: 'edit', label: 'Sunting utas', icon: 'edit' });
+    }
+    if (canModerate.value) {
+        items.push({ key: 'pin', label: thread.value?.is_pinned ? 'Lepas sematan' : 'Sematkan utas', icon: 'check' });
+        items.push({ key: 'lock', label: thread.value?.is_locked ? 'Buka kunci utas' : 'Kunci utas', icon: 'lock' });
+    }
+    if (canDeleteThread.value) {
+        items.push({ key: 'delete-thread', label: 'Hapus utas', icon: 'trash', danger: true });
+    }
+    return items;
+});
+
+function onManage(key) {
+    if (key === 'edit') {
+        editing.value = true;
+        editErrors.value = {};
+    } else {
+        pending.value = { kind: key };
+    }
+}
+
 onMounted(load);
 watch(() => route.params.threadId, load);
 </script>
 
 <template>
     <section>
-        <RouterLink :to="`/courses/${courseId}/forum`" class="text-sm text-brand-700 hover:underline">
-            &larr; Forum
-        </RouterLink>
+        <PageHeader
+            :title="thread?.title ?? 'Utas'"
+            :breadcrumbs="[{ label: 'Forum', to: `/courses/${courseId}/forum` }, { label: thread?.title ?? 'Utas' }]"
+        >
+            <template v-if="thread && !editing" #meta>
+                <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-small text-kapur-600">
+                    <span class="font-semibold text-ink">{{ thread.author?.name }}</span>
+                    <Badge :tone="thread.author?.role === 'teacher' ? 'brand' : 'neutral'">{{ roleLabel(thread.author?.role) }}</Badge>
+                    <span>{{ formatDateTime(thread.created_at) }}</span>
+                    <Badge v-if="thread.is_pinned" tone="info">Disematkan</Badge>
+                    <Badge v-if="thread.is_locked" tone="warning">Terkunci</Badge>
+                </div>
+            </template>
+            <template v-if="thread && !editing && manageItems.length" #actions>
+                <Dropdown label="Kelola utas" icon="ellipsis" :items="manageItems" @select="onManage" />
+            </template>
+        </PageHeader>
 
-        <div v-if="loading" class="mt-3 space-y-2" role="status" aria-busy="true">
-            <Skeleton class="h-6 w-1/2" />
+        <div v-if="loading" class="mt-8 space-y-3" role="status" aria-busy="true">
             <Skeleton class="h-4 w-full" />
             <Skeleton class="h-4 w-2/3" />
+            <Skeleton class="h-24 w-full" />
             <span class="sr-only">Memuat utas...</span>
         </div>
 
-        <EmptyState v-else-if="notFound" class="mt-3" title="Utas tidak ditemukan." icon="clipboard">
+        <EmptyState v-else-if="notFound" class="mt-8" title="Utas tidak ditemukan" description="Utas ini tidak ada atau sudah dihapus." icon="clipboard">
             <BaseButton variant="secondary" :to="`/courses/${courseId}/forum`">Kembali ke forum</BaseButton>
         </EmptyState>
 
-        <InlineAlert v-else-if="error" tone="danger" class="mt-3">
+        <InlineAlert v-else-if="error" tone="danger" class="mt-8" title="Utas tidak dapat dimuat">
             {{ error }}
-            <BaseButton variant="secondary" size="sm" class="ml-2" @click="load">Coba lagi</BaseButton>
+            <div class="mt-2"><BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton></div>
         </InlineAlert>
 
         <template v-else-if="thread">
-            <InlineAlert v-if="archived" tone="info" class="mt-3">Kelas diarsipkan. Forum hanya dapat dibaca.</InlineAlert>
+            <InlineAlert v-if="archived" tone="info" class="mt-8">Kelas diarsipkan. Forum hanya dapat dibaca.</InlineAlert>
 
-            <BaseCard class="mt-3">
-                <ThreadForm
-                    v-if="editing"
-                    :initial="{ title: thread.title, body: thread.body }"
-                    submit-label="Simpan"
-                    :saving="saving"
-                    :errors="editErrors"
-                    @submit="saveThread"
-                    @cancel="editing = false; editErrors = {}"
-                />
-
-                <article v-else>
-                    <h2 class="text-xl font-semibold text-slate-900">{{ thread.title }}</h2>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                        <span>{{ thread.author?.name }}</span>
-                        <Badge :tone="thread.author?.role === 'teacher' ? 'brand' : 'neutral'">{{ roleLabel(thread.author?.role) }}</Badge>
-                        <span>{{ formatDateTime(thread.created_at) }}</span>
-                        <Badge v-if="thread.is_pinned" tone="info">Disematkan</Badge>
-                        <Badge v-if="thread.is_locked" tone="warning">Terkunci</Badge>
+            <!-- Isi utas -->
+            <div class="mt-8">
+                <div v-if="editing" class="rounded-tile bg-well p-5 md:p-6">
+                    <h2 class="font-serif text-h2 font-medium text-ink">Sunting utas</h2>
+                    <div class="mt-5">
+                        <ThreadForm
+                            :initial="{ title: thread.title, body: thread.body }"
+                            submit-label="Simpan"
+                            :saving="saving"
+                            :errors="editErrors"
+                            @submit="saveThread"
+                            @cancel="editing = false; editErrors = {}"
+                        />
                     </div>
-
-                    <div class="mt-4">
-                        <MarkdownView :source="thread.body" />
-                    </div>
-
-                    <div v-if="canEditThread || canDeleteThread || canModerate" class="mt-4 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-                        <BaseButton v-if="canEditThread" variant="secondary" size="sm" @click="editing = true">
-                            <BaseIcon name="edit" size="sm" />Sunting
-                        </BaseButton>
-                        <BaseButton v-if="canModerate" variant="secondary" size="sm" @click="pending = { kind: 'pin' }">
-                            {{ thread.is_pinned ? 'Lepas sematan' : 'Sematkan' }}
-                        </BaseButton>
-                        <BaseButton v-if="canModerate" variant="secondary" size="sm" @click="pending = { kind: 'lock' }">
-                            {{ thread.is_locked ? 'Buka kunci' : 'Kunci' }}
-                        </BaseButton>
-                        <BaseButton v-if="canDeleteThread" variant="danger-outline" size="sm" @click="pending = { kind: 'delete-thread' }">
-                            <BaseIcon name="trash" size="sm" />Hapus
-                        </BaseButton>
-                    </div>
+                </div>
+                <article v-else class="max-w-170">
+                    <MarkdownView :source="thread.body" variant="compact" />
                 </article>
-            </BaseCard>
+            </div>
 
-            <section class="mt-6" aria-labelledby="posts-heading">
-                <h3 id="posts-heading" class="text-lg font-semibold text-slate-900">Balasan ({{ thread.posts_count }})</h3>
-                <p v-if="thread.posts.length === 0" class="mt-2 text-sm text-slate-600">Belum ada balasan.</p>
+            <!-- Balasan -->
+            <section class="mt-12" aria-labelledby="posts-heading">
+                <h2 id="posts-heading" class="font-serif text-h2 font-medium text-ink">Balasan</h2>
+                <p class="text-caption text-kapur-500">{{ thread.posts_count }} balasan</p>
+                <p v-if="thread.posts.length === 0" class="mt-4 text-body text-kapur-600">Belum ada balasan.</p>
 
-                <ul v-else class="mt-3 space-y-2">
-                    <li v-for="post in thread.posts" :key="post.id">
-                        <BaseCard>
-                            <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                                <span class="font-medium text-slate-900">{{ post.author?.name }}</span>
-                                <Badge :tone="post.author?.role === 'teacher' ? 'brand' : 'neutral'">{{ roleLabel(post.author?.role) }}</Badge>
-                                <span>{{ formatDateTime(post.created_at) }}</span>
-                                <span v-if="post.updated_at !== post.created_at">(diubah)</span>
-                            </div>
-
-                            <div v-if="editingPostId === post.id" class="mt-3">
-                                <PostForm
-                                    :initial="post.body"
-                                    submit-label="Simpan"
-                                    :saving="postSaving"
-                                    :error="postError"
-                                    cancellable
-                                    @submit="(body) => savePost(post, body)"
-                                    @cancel="editingPostId = null"
-                                />
-                            </div>
-                            <template v-else>
-                                <div class="mt-2">
-                                    <MarkdownView :source="post.body" />
+                <ul v-else class="mt-4 border-t border-line">
+                    <li v-for="post in thread.posts" :key="post.id" class="border-b border-line py-5">
+                        <div class="flex items-start gap-4">
+                            <Avatar :name="post.author?.name ?? ''" :size="36" class="mt-0.5 max-md:hidden" />
+                            <div class="min-w-0 max-w-170 flex-1">
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-kapur-600">
+                                    <span class="font-semibold text-ink">{{ post.author?.name }}</span>
+                                    <Badge :tone="post.author?.role === 'teacher' ? 'brand' : 'neutral'">{{ roleLabel(post.author?.role) }}</Badge>
+                                    <span>{{ formatDateTime(post.created_at) }}</span>
+                                    <span v-if="post.updated_at !== post.created_at" class="text-kapur-500">(diubah)</span>
                                 </div>
-                                <div v-if="canEditPost(post) || canDeletePost(post)" class="mt-3 flex flex-wrap gap-2">
-                                    <BaseButton v-if="canEditPost(post)" variant="secondary" size="sm" @click="startEditPost(post)">
-                                        <BaseIcon name="edit" size="sm" />Sunting
-                                    </BaseButton>
-                                    <BaseButton v-if="canDeletePost(post)" variant="danger-outline" size="sm" @click="pending = { kind: 'delete-post', post }">
-                                        <BaseIcon name="trash" size="sm" />Hapus
-                                    </BaseButton>
+
+                                <div v-if="editingPostId === post.id" class="mt-3">
+                                    <PostForm
+                                        :initial="post.body"
+                                        submit-label="Simpan"
+                                        :saving="postSaving"
+                                        :error="postError"
+                                        cancellable
+                                        @submit="(body) => savePost(post, body)"
+                                        @cancel="editingPostId = null"
+                                    />
                                 </div>
-                            </template>
-                        </BaseCard>
+                                <template v-else>
+                                    <div class="mt-2">
+                                        <MarkdownView :source="post.body" variant="compact" />
+                                    </div>
+                                    <div v-if="canEditPost(post) || canDeletePost(post)" class="mt-3 flex flex-wrap gap-2">
+                                        <BaseButton v-if="canEditPost(post)" variant="ghost" size="sm" :aria-label="`Sunting balasan ${post.author?.name}`" @click="startEditPost(post)">
+                                            <BaseIcon name="edit" size="sm" />Sunting
+                                        </BaseButton>
+                                        <BaseButton v-if="canDeletePost(post)" variant="danger-outline" size="sm" :aria-label="`Hapus balasan ${post.author?.name}`" @click="pending = { kind: 'delete-post', post }">
+                                            <BaseIcon name="trash" size="sm" />Hapus
+                                        </BaseButton>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </li>
                 </ul>
             </section>
 
-            <div class="mt-6">
+            <div class="mt-12">
                 <InlineAlert v-if="thread.is_locked && !archived" tone="warning">
                     Utas ini terkunci. Balasan baru tidak diterima.
                 </InlineAlert>
-                <BaseCard v-else-if="canReply">
-                    <h3 class="text-lg font-semibold text-slate-900">Tulis balasan</h3>
-                    <div class="mt-3">
+                <section v-else-if="canReply" class="max-w-170" aria-labelledby="reply-heading">
+                    <h2 id="reply-heading" class="font-serif text-h2 font-medium text-ink">Tulis balasan</h2>
+                    <div class="mt-5">
                         <PostForm ref="replyForm" :saving="replying" :error="replyError" @submit="createPost" />
                     </div>
-                </BaseCard>
+                </section>
             </div>
 
             <ConfirmDialog

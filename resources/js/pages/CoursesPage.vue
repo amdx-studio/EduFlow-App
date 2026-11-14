@@ -7,7 +7,7 @@ import CourseCard from '../components/CourseCard.vue';
 import CreateCourseForm from '../components/CreateCourseForm.vue';
 import JoinCourseForm from '../components/JoinCourseForm.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import BaseCard from '../components/ui/BaseCard.vue';
+import Modal from '../components/ui/Modal.vue';
 import BaseIcon from '../components/ui/BaseIcon.vue';
 import EmptyState from '../components/ui/EmptyState.vue';
 import InlineAlert from '../components/ui/InlineAlert.vue';
@@ -48,31 +48,31 @@ onMounted(load);
 </script>
 
 <template>
-    <section class="space-y-4">
+    <section>
         <PageHeader
-            title="Daftar kelas"
+            title="Kelas"
             :description="auth.isTeacher ? 'Kelola kelas, materi, dan kuis Anda.' : 'Kelas yang Anda ikuti.'"
         >
-            <template v-if="auth.isTeacher && !showCreate" #actions>
+            <template v-if="auth.isTeacher" #actions>
                 <BaseButton @click="showCreate = true"><BaseIcon name="plus" size="sm" />Buat kelas</BaseButton>
             </template>
         </PageHeader>
 
-        <CreateCourseForm v-if="auth.isTeacher && showCreate" @created="onCreated" @cancel="showCreate = false" />
-        <JoinCourseForm v-if="auth.isStudent" @joined="onJoined" />
+        <JoinCourseForm v-if="auth.isStudent" class="mt-8" @joined="onJoined" />
 
-        <div v-if="loading" class="grid gap-3 sm:grid-cols-2" role="status" aria-busy="true">
-            <BaseCard v-for="n in 2" :key="n">
-                <div class="space-y-2">
-                    <Skeleton class="h-6 w-2/3" />
-                    <Skeleton class="h-4 w-full" />
-                    <Skeleton class="h-4 w-1/2" />
-                </div>
-            </BaseCard>
+        <h2 class="mt-10 font-serif text-h2 font-medium text-ink">Kelas Anda</h2>
+
+        <div v-if="loading" class="mt-4 grid gap-4 md:grid-cols-2" role="status" aria-busy="true">
+            <div v-for="n in 2" :key="n" class="rounded-tile bg-well p-6">
+                <Skeleton class="h-12 w-12" />
+                <Skeleton class="mt-4 h-6 w-2/3" />
+                <Skeleton class="mt-3 h-4 w-full" />
+                <Skeleton class="mt-2 h-4 w-1/2" />
+            </div>
             <span class="sr-only">Memuat kelas...</span>
         </div>
 
-        <InlineAlert v-else-if="error" tone="danger" title="Kelas tidak dapat dimuat">
+        <InlineAlert v-else-if="error" class="mt-4" tone="danger" title="Kelas tidak dapat dimuat">
             {{ error }}
             <div class="mt-2">
                 <BaseButton variant="secondary" size="sm" @click="load">Coba lagi</BaseButton>
@@ -81,13 +81,20 @@ onMounted(load);
 
         <EmptyState
             v-else-if="!courses.length"
-            title="Belum ada kelas"
-            :description="auth.isTeacher ? 'Klik Buat kelas untuk memulai.' : 'Masukkan kode gabung dari gurumu di atas.'"
+            class="mt-4"
+            :title="auth.isTeacher ? 'Belum ada kelas' : 'Belum ada kelas yang diikuti'"
+            :description="auth.isTeacher ? 'Buat kelas pertama untuk mulai menambahkan konsep, materi, dan kuis.' : 'Masukkan kode gabung dari guru Anda untuk bergabung.'"
             icon="book-open"
-        />
+        >
+            <BaseButton v-if="auth.isTeacher" @click="showCreate = true">Buat kelas</BaseButton>
+        </EmptyState>
 
-        <div v-else class="grid gap-3 sm:grid-cols-2">
+        <div v-else class="mt-4 grid gap-4 md:grid-cols-2">
             <CourseCard v-for="course in courses" :key="course.id" :course="course" :is-teacher="auth.isTeacher" />
         </div>
+
+        <Modal v-model="showCreate" title="Buat kelas" size="md">
+            <CreateCourseForm @created="onCreated" @cancel="showCreate = false" />
+        </Modal>
     </section>
 </template>

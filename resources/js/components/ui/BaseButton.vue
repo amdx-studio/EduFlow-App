@@ -11,20 +11,25 @@ defineProps({
 });
 
 const VARIANTS = {
-    primary: 'bg-brand-600 text-white hover:bg-brand-700',
-    secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-    danger: 'bg-danger-600 text-white hover:bg-danger-700',
-    ghost: 'text-slate-700 hover:bg-slate-100',
-    'danger-outline': 'border border-danger-300 bg-white text-danger-700 hover:bg-danger-50',
+    primary: 'bg-primary text-white hover:bg-primary-hover active:bg-primary-active',
+    secondary: 'border border-line-control bg-white text-ink hover:bg-kapur-100 active:bg-kapur-200',
+    danger: 'bg-level-not-mastered-fill text-white hover:bg-level-not-mastered-text active:bg-level-not-mastered-text',
+    ghost: 'text-kapur-600 hover:bg-kapur-100 active:bg-kapur-200',
+    'danger-outline': 'border border-level-not-mastered-border bg-white text-level-not-mastered-text hover:bg-level-not-mastered-tint',
 };
-const SIZES = { md: 'min-h-10 px-4 py-2', sm: 'min-h-10 px-3 py-1.5', icon: 'h-8 w-8 p-0' };
+const SIZES = {
+    md: 'min-h-11 px-5 py-2',
+    sm: 'min-h-9 px-4 py-1.5',
+    lg: 'min-h-13 px-6 py-3 text-body-l',
+    icon: 'h-9 w-9 p-0',
+};
 </script>
 
 <template>
     <component
         :is="to ? RouterLink : 'button'"
         v-bind="to ? { to } : { type, disabled: disabled || loading }"
-        class="inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
+        class="inline-flex items-center justify-center gap-2 rounded-control text-small font-semibold transition-colors duration-120 disabled:cursor-not-allowed disabled:opacity-50"
         :class="[VARIANTS[variant] ?? VARIANTS.primary, SIZES[size] ?? SIZES.md]"
         :aria-busy="loading || undefined"
     >

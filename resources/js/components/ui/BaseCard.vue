@@ -5,7 +5,7 @@ defineProps({
 </script>
 
 <template>
-    <div class="rounded-xl border border-slate-200 bg-white shadow-sm" :class="padded ? 'p-4 sm:p-5' : ''">
+    <div class="rounded-tile bg-well" :class="padded ? 'p-5 md:p-6' : ''">
         <slot />
     </div>
 </template>

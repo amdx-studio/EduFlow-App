@@ -7,6 +7,7 @@ defineProps({
     title: { type: String, default: 'Konfirmasi' },
     message: { type: String, default: '' },
     confirmLabel: { type: String, default: 'Ya, lanjutkan' },
+    cancelLabel: { type: String, default: 'Batal' },
     variant: { type: String, default: 'danger' },
     busy: { type: Boolean, default: false },
 });
@@ -21,9 +22,9 @@ const emit = defineEmits(['confirm', 'cancel']);
         :busy="busy"
         @update:model-value="(value) => !value && emit('cancel')"
     >
-        <p class="text-sm text-slate-600">{{ message }}</p>
+        <p class="text-body text-kapur-600">{{ message }}</p>
         <template #footer>
-            <BaseButton variant="secondary" :disabled="busy" data-autofocus @click="emit('cancel')">Batal</BaseButton>
+            <BaseButton variant="secondary" :disabled="busy" data-autofocus @click="emit('cancel')">{{ cancelLabel }}</BaseButton>
             <BaseButton :variant="variant" :loading="busy" @click="emit('confirm')">
                 {{ busy ? 'Memproses...' : confirmLabel }}
             </BaseButton>

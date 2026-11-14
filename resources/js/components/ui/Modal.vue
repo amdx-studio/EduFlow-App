@@ -19,7 +19,7 @@ const panel = ref(null);
 let previouslyFocused = null;
 let previousOverflow = '';
 
-const SIZES = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl' };
+const SIZES = { sm: 'max-w-120', md: 'max-w-150', lg: 'max-w-2xl' };
 const FOCUSABLE =
     'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -101,7 +101,7 @@ onBeforeUnmount(() => {
     <Teleport to="body">
         <div
             v-if="open"
-            class="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/50 p-4 sm:items-center"
+            class="fixed inset-0 z-40 flex items-end justify-center bg-overlay md:items-center md:p-4"
             @mousedown.self="dismissible && close()"
             @keydown="onKeydown"
         >
@@ -112,18 +112,18 @@ onBeforeUnmount(() => {
                 :aria-labelledby="titleId"
                 :aria-describedby="description ? descId : undefined"
                 tabindex="-1"
-                class="w-full rounded-xl bg-white shadow-xl outline-none"
+                class="w-full rounded-t-modal bg-white shadow-modal outline-none md:rounded-b-modal"
                 :class="SIZES[size] ?? SIZES.md"
             >
-                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                <div class="flex items-start justify-between gap-3 border-b border-line px-6 py-5">
                     <div class="min-w-0">
-                        <h2 :id="titleId" class="text-lg font-semibold text-slate-900">{{ title }}</h2>
-                        <p v-if="description" :id="descId" class="mt-1 text-sm text-slate-600">{{ description }}</p>
+                        <h2 :id="titleId" class="font-serif text-h2 font-medium text-ink">{{ title }}</h2>
+                        <p v-if="description" :id="descId" class="mt-1 text-sm text-kapur-600">{{ description }}</p>
                     </div>
                     <button
                         v-if="dismissible"
                         type="button"
-                        class="-m-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                        class="-m-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-kapur-500 hover:bg-kapur-100 disabled:opacity-50"
                         aria-label="Tutup"
                         :disabled="busy"
                         @click="close"
@@ -131,10 +131,10 @@ onBeforeUnmount(() => {
                         <BaseIcon name="x" />
                     </button>
                 </div>
-                <div class="max-h-[70vh] overflow-y-auto px-5 py-4">
+                <div class="max-h-[70vh] overflow-y-auto px-6 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                     <slot />
                 </div>
-                <div v-if="$slots.footer" class="flex flex-wrap justify-end gap-2 border-t border-slate-200 px-5 py-3">
+                <div v-if="$slots.footer" class="flex flex-wrap justify-end gap-2 border-t border-line px-6 py-4">
                     <slot name="footer" />
                 </div>
             </div>
