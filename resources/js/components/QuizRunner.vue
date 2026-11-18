@@ -58,6 +58,13 @@ const confirmMessage = computed(() => {
     return parts.join(' ');
 });
 
+function blockShortcuts(e) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (['c', 'x', 'a', 'p', 's', 'u'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+    }
+}
+
 function setOnline() {
     online.value = navigator.onLine;
 }
@@ -174,10 +181,12 @@ async function submit() {
 onMounted(() => {
     load();
     window.addEventListener('online', setOnline);
+    window.addEventListener('keydown', blockShortcuts);
     window.addEventListener('offline', setOnline);
 });
 onBeforeUnmount(() => {
     window.removeEventListener('online', setOnline);
+    window.removeEventListener('keydown', blockShortcuts);
     window.removeEventListener('offline', setOnline);
 });
 </script>
@@ -254,7 +263,7 @@ onBeforeUnmount(() => {
                 </nav>
                 <BaseButton variant="secondary" size="sm" class="mt-3 md:hidden" @click="sheet = true">Daftar soal</BaseButton>
 
-                <article class="mt-10">
+                <article class="mt-10 select-none print:hidden" @copy.prevent @cut.prevent @contextmenu.prevent @selectstart.prevent @dragstart.prevent>
                     <div class="flex items-baseline justify-between gap-3">
                         <p class="text-small font-semibold text-kapur-500">Soal {{ current + 1 }}</p>
                         <p class="text-caption text-kapur-500">{{ question.points }} poin</p>
